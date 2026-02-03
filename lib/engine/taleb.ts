@@ -21,7 +21,7 @@ export interface TalebResult {
     call_suggestion: Suggestion;
     put_suggestion: Suggestion;
   };
-  super_candidates: any[];
+  super_candidates: {calls: any[]; puts: any[];};
 }
 
 interface Suggestion {
@@ -112,5 +112,5 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
   const notify_me = superCandidates.length > 0 || aiDecision.call_suggestion.decision === 'BUY' || aiDecision.put_suggestion.decision === 'BUY';
 
-  return { notify_me, ai_analysis: aiDecision, super_candidates: superCandidates };
+  return { notify_me, ai_analysis: aiDecision, super_candidates: { calls: superCalls, puts: superPuts } };
 }

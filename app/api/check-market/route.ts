@@ -2,8 +2,11 @@
 import { NextResponse } from 'next/server';
 import { runTalebStrategy } from '@/lib/engine/taleb';
 import { NotificationService } from '@/lib/services/telegram';
+import { PrismaClient } from '@prisma/client/extension';
 
 export const dynamic = 'force-dynamic';
+
+const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   // OPTIONAL: Add a secret key check so only GitHub Actions can call this
@@ -12,21 +15,38 @@ export async function GET(request: Request) {
   //     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   //   }
 
+  console.log('⭕⭕ auth header', authHeader);
   
 
   try {
     // 1. Run the Strategy Logic
     const result = await runTalebStrategy();
 
+     const candidatesPayload = {
+      calls: result.super_candidates.calls,
+      puts: result.super_candidates.puts
+    };
+
+    // 3. Save to PostgreSQL
+    const savedSignal = await prisma.talebSignal.create({
+      data: {
+        marketStatus: 'ACTIVE', // You can refine this logic
+        callAdvice: result.ai_analysis.call_suggestion,
+        putAdvice: result.ai_analysis.put_suggestion,
+        candidates: candidatesPayload,
+        sentNotification: result.notify_me
+      }
+    });
+
 
     // 2. Check if we need to notify
     if (result.notify_me) {
       const { call_suggestion, put_suggestion } = result.ai_analysis;
-      const superCount = result.super_candidates.length;
+      const superCount = result.super_candidates.calls.length + result.super_candidates.puts.length;
 
       // Construct Telegram Message (HTML Format)
       let msg = `<b>🦅 Taleb System Alert</b>\n\n`;
-      msg += `<b>💎 Super Candidates:</b> ${superCount} found\n`;
+      msg += `<b>💎 Candidates:</b> ${superCount} found\n`;
       msg += `-----------------------------\n`;
 
       // Call Section
