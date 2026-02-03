@@ -12,6 +12,9 @@ export async function GET(request: Request) {
   //     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   //   }
 
+  console.log('🐞🐞 authHeader', authHeader);
+  
+
   try {
     // 1. Run the Strategy Logic
     const result = await runTalebStrategy();
@@ -72,7 +75,7 @@ export async function GET(request: Request) {
       message: 'No significant signals today.',
     });
   } catch (error: any) {
-    console.error('Cron Job Error:', error);
+    console.error('🐞 Cron Job Error: ', error);
     await NotificationService.sendTelegram(
       `⚠️ <b>System Error:</b> ${error.message}`,
     );
