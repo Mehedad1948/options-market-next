@@ -3,19 +3,20 @@ import { NextResponse } from 'next/server';
 import { runTalebStrategy } from '@/lib/engine/taleb';
 import { NotificationService } from '@/lib/services/telegram';
 
-
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   // OPTIONAL: Add a secret key check so only GitHub Actions can call this
   const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+  //   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  //     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  //   }
 
   try {
     // 1. Run the Strategy Logic
     const result = await runTalebStrategy();
+
+    console.log('⭕⭕⭕ result', result);
 
     // 2. Check if we need to notify
     if (result.notify_me) {
@@ -42,7 +43,11 @@ export async function GET(request: Request) {
       }
 
       // If only Super candidates but AI said WAIT
-      if (superCount > 0 && call_suggestion.decision === 'WAIT' && put_suggestion.decision === 'WAIT') {
+      if (
+        superCount > 0 &&
+        call_suggestion.decision === 'WAIT' &&
+        put_suggestion.decision === 'WAIT'
+      ) {
         msg += `AI suggests waiting, but mathematical super candidates exist. Check dashboard.`;
       }
 
@@ -50,17 +55,30 @@ export async function GET(request: Request) {
       const sent = await NotificationService.sendTelegram(msg);
 
       if (sent) {
-        return NextResponse.json({ status: 'success', message: 'Alert sent to Telegram' });
+        return NextResponse.json({
+          status: 'success',
+          message: 'Alert sent to Telegram',
+        });
       } else {
-        return NextResponse.json({ status: 'warning', message: 'Signal found but Telegram failed' });
+        return NextResponse.json({
+          status: 'warning',
+          message: 'Signal found but Telegram failed',
+        });
       }
     }
 
-    return NextResponse.json({ status: 'success', message: 'No significant signals today.' });
-
+    return NextResponse.json({
+      status: 'success',
+      message: 'No significant signals today.',
+    });
   } catch (error: any) {
     console.error('Cron Job Error:', error);
-    await NotificationService.sendTelegram(`⚠️ <b>System Error:</b> ${error.message}`);
-    return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+    await NotificationService.sendTelegram(
+      `⚠️ <b>System Error:</b> ${error.message}`,
+    );
+    return NextResponse.json(
+      { status: 'error', message: error.message },
+      { status: 500 },
+    );
   }
 }
