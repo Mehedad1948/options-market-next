@@ -1,15 +1,26 @@
-name: Market Check Cron
+name: Taleb Market Scanner (Iran Hours)
+
 on:
   schedule:
-    # Runs at 09:00 AM UTC (12:30 PM Tehran Time) every day
-    - cron: '0 9 * * *'
-  workflow_dispatch: # Allows manual trigger button
+    # Runs at minute 0 and 30 past hour 5, 6, 7, 8, 9, 10, and 11 
+    # Only on Sunday(0) through Wednesday(3) and Saturday(6)
+    # UTC Times: 05:00, 05:30 ... 11:30
+    # Iran Times: ~08:30 ... ~15:00
+    - cron: '0,30 5-11 * * 0-3,6'
+  
+  # Allows you to click a button in GitHub Actions tab to trigger manually
+  workflow_dispatch:
 
 jobs:
-  check-market:
+  cron-job:
     runs-on: ubuntu-latest
     steps:
-      - name: Call API Route
+      - name: Call Taleb API Endpoint
         run: |
-          curl -X GET ${{ secrets.YOUR_SITE_URL }}/api/check-market \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          echo "Triggering Market Check at ${{ secrets.YOUR_SITE_URL }}..."
+          
+          # Send GET request with Authorization header
+          curl -X GET "${{ secrets.YOUR_SITE_URL }}/api/check-market" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          --fail \
+          --verbose
