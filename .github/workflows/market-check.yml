@@ -1,0 +1,15 @@
+name: Market Check Cron
+on:
+  schedule:
+    # Runs at 09:00 AM UTC (12:30 PM Tehran Time) every day
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allows manual trigger button
+
+jobs:
+  check-market:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API Route
+        run: |
+          curl -X GET ${{ secrets.YOUR_SITE_URL }}/api/check-market \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
