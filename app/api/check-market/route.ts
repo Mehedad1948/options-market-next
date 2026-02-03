@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { runTalebStrategy } from '@/lib/engine/taleb';
 import { NotificationService } from '@/lib/services/telegram';
-import { PrismaClient } from '@prisma/client/extension';
+import { PrismaClient } from '@prisma/client'
 
 export const dynamic = 'force-dynamic';
 

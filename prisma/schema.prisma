@@ -6,26 +6,22 @@ generator client {
 
 datasource db {
     provider = "postgresql"
-
-    url = env("DATABASE_URL")
+    url      = env("DATABASE_URL")
 }
 
 model TalebSignal {
     id        String   @id @default(cuid())
     createdAt DateTime @default(now())
 
-    // Is the market actually open?
     marketStatus String? // "OPEN", "CLOSED"
 
-    // The AI's thoughts
     aiReasoning String  @db.Text
-    callAdvice  String? @db.Text
-    putAdvice   String? @db.Text
+    
+    // CHANGE: Use Json instead of String to store the structured object
+    callAdvice  Json?
+    putAdvice   Json?
 
-    // The Raw Data (Store the top 5 calls/puts as JSON)
-    // This allows you to render the table rows dynamically
     candidates Json
 
-    // Did we notify Telegram?
     sentNotification Boolean @default(false)
 }
