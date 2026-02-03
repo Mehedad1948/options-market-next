@@ -1,32 +1,31 @@
 // prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  
-  url       = env("DATABASE_URL") 
-  
-  directUrl = env("DIRECT_URL")
+    provider = "postgresql"
+
+    url = env("DATABASE_URL")
 }
+
 model TalebSignal {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  
-  // Is the market actually open?
-  marketStatus String? // "OPEN", "CLOSED"
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
 
-  // The AI's thoughts
-  aiReasoning String   @db.Text
-  callAdvice  String?  @db.Text
-  putAdvice   String?  @db.Text
-  
-  // The Raw Data (Store the top 5 calls/puts as JSON)
-  // This allows you to render the table rows dynamically
-  candidates  Json     
+    // Is the market actually open?
+    marketStatus String? // "OPEN", "CLOSED"
 
-  // Did we notify Telegram?
-  sentNotification Boolean @default(false)
+    // The AI's thoughts
+    aiReasoning String  @db.Text
+    callAdvice  String? @db.Text
+    putAdvice   String? @db.Text
+
+    // The Raw Data (Store the top 5 calls/puts as JSON)
+    // This allows you to render the table rows dynamically
+    candidates Json
+
+    // Did we notify Telegram?
+    sentNotification Boolean @default(false)
 }
