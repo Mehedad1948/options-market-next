@@ -12,14 +12,12 @@ export async function GET(request: Request) {
   //     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   //   }
 
-  console.log('🐞🐞 authHeader', authHeader);
   
 
   try {
     // 1. Run the Strategy Logic
     const result = await runTalebStrategy();
 
-    console.log('⭕⭕⭕ result', result);
 
     // 2. Check if we need to notify
     if (result.notify_me) {
