@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { runTalebStrategy } from '@/lib/engine/taleb';
 import { NotificationService } from '@/lib/services/telegram';
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,33 +16,41 @@ export async function GET(request: Request) {
   //   }
 
   console.log('⭕⭕ auth header', authHeader);
-  
 
   try {
     // 1. Run the Strategy Logic
     const result = await runTalebStrategy();
 
-     const candidatesPayload = {
+    const candidatesPayload = {
       calls: result.super_candidates.calls,
-      puts: result.super_candidates.puts
+      puts: result.super_candidates.puts,
     };
 
     // 3. Save to PostgreSQL
-    const savedSignal = await prisma.talebSignal.create({
-      data: {
-        marketStatus: 'ACTIVE', // You can refine this logic
-        callAdvice: result.ai_analysis.call_suggestion,
-        putAdvice: result.ai_analysis.put_suggestion,
-        candidates: candidatesPayload,
-        sentNotification: result.notify_me
-      }
-    });
+const savedSignal = await prisma.talebSignal.create({
+  data: {
+    marketStatus: 'ACTIVE',
+    
+    // FIX: Use 'as unknown as Prisma.InputJsonValue'
+    callAdvice: (result.ai_analysis.call_suggestion ?? null) as unknown as Prisma.InputJsonValue,
+    putAdvice: (result.ai_analysis.put_suggestion ?? null) as unknown as Prisma.InputJsonValue,
 
+    // Remember to include the required aiReasoning field
+    aiReasoning: result.ai_analysis.call_suggestion?.reasoning || "No reasoning provided",
+
+    // Apply the same fix to candidates if needed
+    candidates: candidatesPayload as unknown as Prisma.InputJsonValue,
+    
+    sentNotification: result.notify_me,
+  },
+});
 
     // 2. Check if we need to notify
     if (result.notify_me) {
       const { call_suggestion, put_suggestion } = result.ai_analysis;
-      const superCount = result.super_candidates.calls.length + result.super_candidates.puts.length;
+      const superCount =
+        result.super_candidates.calls.length +
+        result.super_candidates.puts.length;
 
       // Construct Telegram Message (HTML Format)
       let msg = `<b>🦅 Taleb System Alert</b>\n\n`;
