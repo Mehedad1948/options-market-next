@@ -3,6 +3,7 @@
 import iv from 'implied-volatility';
 import axios from 'axios';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { TradeSuggestion } from '@/types/taleb';
 
 // Config
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyCubVc7Xso_Cr6ebxnFRPSwXW51lewGmVQ';
@@ -18,18 +19,13 @@ const cleanNum = (val: any) => (!val ? 0 : (typeof val === 'number' ? val : pars
 export interface TalebResult {
   notify_me: boolean;
   ai_analysis: {
-    call_suggestion: Suggestion;
-    put_suggestion: Suggestion;
+    call_suggestion: TradeSuggestion;
+    put_suggestion: TradeSuggestion;
   };
   super_candidates: {calls: any[]; puts: any[];};
 }
 
-interface Suggestion {
-  decision: "BUY" | "WAIT";
-  symbol: string | null;
-  max_entry_price: number;
-  reasoning: string;
-}
+
 
 export async function runTalebStrategy(): Promise<TalebResult> {
   console.log('🔄 Engine: Running Taleb Strategy...');

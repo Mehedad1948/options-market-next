@@ -2,14 +2,13 @@
 import axios from 'axios';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID; // Your personal ID or Channel ID
 
 export class NotificationService {
   /**
    * Sends a formatted message to the configured Telegram Chat.
    */
-  static async sendTelegram(message: string): Promise<boolean> {
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+  static async sendTelegram(message: string, chatId: string): Promise<boolean> {
+    if (!TELEGRAM_BOT_TOKEN || !chatId) {
       console.warn("⚠️ Telegram credentials missing in .env");
       return false;
     }
@@ -18,7 +17,7 @@ export class NotificationService {
     
     try {
       await axios.post(url, {
-        chat_id: TELEGRAM_CHAT_ID,
+        chat_id: chatId,
         text: message,
         parse_mode: 'HTML', // Allows bolding and links
         disable_web_page_preview: true

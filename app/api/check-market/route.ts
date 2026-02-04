@@ -49,7 +49,7 @@ const savedSignal = await prisma.talebSignal.create({
 });
 
     // 2. Check if we need to notify
-    if (result.notify_me) {
+   if (result.notify_me) {
       const { call_suggestion, put_suggestion } = result.ai_analysis;
       const superCount =
         result.super_candidates.calls.length +
@@ -83,20 +83,49 @@ const savedSignal = await prisma.talebSignal.create({
         msg += `AI suggests waiting, but mathematical super candidates exist. Check dashboard.`;
       }
 
-      // 3. Send Notification
-      const sent = await NotificationService.sendTelegram(msg);
+      // ============================================================
+      // 3. FETCH SUBSCRIBERS & SEND NOTIFICATIONS
+      // ============================================================
 
-      if (sent) {
-        return NextResponse.json({
-          status: 'success',
-          message: 'Alert sent to Telegram',
-        });
-      } else {
-        return NextResponse.json({
-          status: 'warning',
-          message: 'Signal found but Telegram failed',
-        });
+      // A. Get active subscribers from DB
+      const subscribers = await prisma.user.findMany({
+        where: {
+          telegramId: { not: null },      // Must have Telegram ID linked
+          notifyTelegram: true,           // Must have notifications ON
+          subscriptionExpiresAt: {
+            gt: new Date()                // Subscription must be in the future
+          }
+        },
+        select: { telegramId: true }
+      });
+
+      // B. Create a unique list of recipients (Admin + Subscribers)
+      // We use a Set to ensure the Admin doesn't get double texts if they are also in the User table
+      const recipientIds = new Set<string>();
+
+      // Always add Admin (from .env)
+      if (process.env.ADMIN_TELEGRAM_CHAT_ID) {
+        recipientIds.add(process.env.ADMIN_TELEGRAM_CHAT_ID);
       }
+      
+      // Add Subscribers
+      subscribers.forEach(user => {
+        if (user.telegramId) recipientIds.add(user.telegramId);
+      });
+
+      console.log(`📣 Sending signal to ${recipientIds.size} recipients...`);
+
+      // C. Send to everyone (using Promise.allSettled to prevent one failure stops all)
+      const sendPromises = Array.from(recipientIds).map(chatId => 
+        NotificationService.sendTelegram(msg, chatId) 
+      );
+
+      await Promise.allSettled(sendPromises);
+
+      return NextResponse.json({
+        status: 'success',
+        message: `Alert sent to ${recipientIds.size} users.`,
+      });
     }
 
     return NextResponse.json({
@@ -105,9 +134,15 @@ const savedSignal = await prisma.talebSignal.create({
     });
   } catch (error: any) {
     console.error('🐞 Cron Job Error: ', error);
-    await NotificationService.sendTelegram(
-      `⚠️ <b>System Error:</b> ${error.message}`,
-    );
+    
+    // Fallback: Try to notify only Admin about the crash
+    if (process.env.ADMIN_TELEGRAM_CHAT_ID) {
+        await NotificationService.sendTelegram(
+        `⚠️ <b>System Error:</b> ${error.message}`, 
+        process.env.ADMIN_TELEGRAM_CHAT_ID
+        );
+    }
+    
     return NextResponse.json(
       { status: 'error', message: error.message },
       { status: 500 },
