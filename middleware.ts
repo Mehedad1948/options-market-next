@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifySession } from '@/lib/auth';
 
-export async function middleware(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   // 1. Check if the user is trying to access a protected route
   // We want to protect anything starting with /dashboard
   const path = request.nextUrl.pathname;
