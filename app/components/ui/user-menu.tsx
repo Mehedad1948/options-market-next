@@ -66,7 +66,7 @@ export async function UserMenu() {
       </Link>
 
       {/* User Info */}
-      <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
+      <Link href={'/profile'} className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
         <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
           <UserIcon className="w-4 h-4" />
         </div>
@@ -78,7 +78,7 @@ export async function UserMenu() {
             {user.phoneNumber || "---"}
           </span>
         </div>
-      </div>
+      </Link>
     </div>
   );
 }
