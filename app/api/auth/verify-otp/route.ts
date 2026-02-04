@@ -1,41 +1,38 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { loginUser } from '@/lib/auth';
 
-const prisma = new PrismaClient();
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const { identifier, code } = await req.json();
+    const { identifier, code } = await request.json();
 
-    // 1. Find the OTP
-    // We look for a valid OTP matching the phone (identifier) that hasn't expired
-    const validOtp = await prisma.otp.findFirst({
+    // 1. Find Valid OTP
+    const otpRecord = await prisma.otp.findFirst({
       where: {
-        identifier: identifier,
-        code: code,
-        expiresAt: { gt: new Date() }, // Not expired
+        identifier,
+        code,
+        expiresAt: { gt: new Date() }, // Must not be expired
       },
-      include: { user: true } // Include user to get ID
+      include: { user: true },
     });
 
-    if (!validOtp || !validOtp.user) {
-      return NextResponse.json({ error: "کد اشتباه یا منقضی شده است" }, { status: 400 });
+    if (!otpRecord || !otpRecord.userId || !otpRecord?.user?.telegramId) {
+      return NextResponse.json({ error: 'کد وارد شده اشتباه یا منقضی شده است' }, { status: 400 });
     }
 
-    // 2. Cleanup OTPs for this user
-    await prisma.otp.deleteMany({ 
-        where: { userId: validOtp.userId } 
+    // 2. Clean up used OTPs
+    await prisma.otp.deleteMany({
+      where: { identifier },
     });
 
-    // 3. Create Session / Login
-    // Assumes loginUser handles cookie setting
-    await loginUser(validOtp.user.id, validOtp.user.telegramId || "");
+
+    // 3. Create Session (Cookie)
+    await loginUser(otpRecord.userId, otpRecord.user.telegramId!);
 
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error("Verify Error", error);
-    return NextResponse.json({ error: "خطا در اعتبارسنجی" }, { status: 500 });
+    console.error('Verify Error:', error);
+    return NextResponse.json({ error: 'خطای سیستمی' }, { status: 500 });
   }
 }

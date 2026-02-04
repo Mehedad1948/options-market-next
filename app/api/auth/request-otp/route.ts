@@ -1,63 +1,85 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { NotificationService } from '@/lib/services/telegram';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
-
-// Helper to standardise phone input (e.g. 0912 -> 98912)
-function normalizePhone(input: string): string {
-  let phone = input.replace(/\D/g, ""); // Remove non-digits
-  if (phone.startsWith("0")) phone = phone.substring(1);
-  if (!phone.startsWith("98")) phone = "98" + phone;
-  return phone;
+// Helper to clean phone numbers (e.g. 0912 -> +98912)
+function normalizePhone(phone: string) {
+  let clean = phone.replace(/\D/g, ''); // remove all non-digits
+  if (clean.startsWith('09')) {
+    clean = '98' + clean.substring(1);
+  }
+  return '+' + clean;
 }
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const { phoneNumber } = await req.json();
+    const { phoneNumber } = await request.json();
 
     if (!phoneNumber) {
-      return NextResponse.json({ error: "شماره موبایل الزامی است" }, { status: 400 });
+      return NextResponse.json({ error: 'شماره موبایل الزامی است' }, { status: 400 });
     }
 
-    const normalizedPhone = normalizePhone(phoneNumber);
+    const cleanPhone = normalizePhone(phoneNumber);
 
-    // 1. Find User by Phone
+    // 1. Find the user
     const user = await prisma.user.findUnique({
-      where: { phoneNumber: normalizedPhone },
+      where: { phoneNumber: cleanPhone },
     });
 
-    // 2. Handle Case: User not found OR User exists but hasn't linked phone yet
+    // 2. STRICT CHECK: User must exist AND have a telegramId
+    // If not found, return 404 to trigger the "Go to Bot" UI
     if (!user || !user.telegramId) {
-      return NextResponse.json({ 
-        error: "UserNotFound", 
-        message: "این شماره در سیستم ثبت نشده است. لطفا در ربات تلگرام دکمه «فعال‌سازی داشبورد» را بزنید." 
+      return NextResponse.json({
+        message: 'حساب کاربری یافت نشد. لطفا ابتدا در ربات تلگرام ثبت نام کنید.',
+        identifier: cleanPhone
       }, { status: 404 });
     }
 
     // 3. Generate OTP
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
 
     // 4. Save OTP to DB
     await prisma.otp.create({
       data: {
         code,
-        identifier: normalizedPhone,
-        type: "TELEGRAM", // matches your Enum
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+        identifier: cleanPhone,
+        type: 'TELEGRAM',
+        expiresAt,
         userId: user.id,
       },
     });
 
-    // 5. Send Code via Telegram
-    const message = `🔐 *کد ورود به داشبورد:*\n\n\`${code}\`\n\n⚠️ این کد را به کسی ندهید.`;
-    await NotificationService.sendTelegram(user.telegramId, message);
+    // 5. Send via Telegram Bot
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) {
+       return NextResponse.json({ error: 'خطای تنظیمات سرور (Bot Token)' }, { status: 500 });
+    }
 
-    // Return the normalized phone to be used in the next step
-    return NextResponse.json({ success: true, identifier: normalizedPhone }); 
+    const text = `🔐 *کد ورود به داشبورد*\n\nکد: \`${code}\`\n\nاین کد تا ۵ دقیقه معتبر است.`;
+
+    const telegramRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: user.telegramId,
+        text: text,
+        parse_mode: 'Markdown',
+      }),
+    });
+
+    if (!telegramRes.ok) {
+       console.error('Telegram Send Error:', await telegramRes.text());
+       return NextResponse.json({ error: 'خطا در ارسال پیام به تلگرام' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      identifier: cleanPhone,
+      message: 'کد به تلگرام شما ارسال شد'
+    });
 
   } catch (error) {
-    console.error("OTP Request Error:", error);
-    return NextResponse.json({ error: "خطا در سرور" }, { status: 500 });
+    console.error('Auth Error:', error);
+    return NextResponse.json({ error: 'خطای سیستمی' }, { status: 500 });
   }
 }
