@@ -29,7 +29,7 @@ export default function HomePage() {
           height={500}
           alt='options'
           src="/hero-2.png"
-          className='absolute bottom-4 right-4 z-20 hidden lg:block md:w-64 opacity-80 mix-blend-multiply dark:mix-blend-overlay'
+          className='absolute bottom-6 right-4 z-20 hidden lg:block md:w-64 opacity-90 mix-blend-multiply dark:mix-blend-overlay'
         />
         {/* Background Gradients - Changed to Warm Amber/Orange to match "Fire" theme */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px]  blur-[100px] rounded-full -z-10" />
@@ -76,7 +76,7 @@ export default function HomePage() {
           </div>
 
           <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mt-12 leading-relaxed">
-            ما با الهام از فلسفه نسیم طالب،
+           با الهام از فلسفه نسیم طالب،
 
             <span className="font-bold text-amber-600 dark:text-amber-500">
               {' '}قوهای سیاه{' '}
@@ -137,7 +137,7 @@ export default function HomePage() {
       {/* --- TALEB / QUOTE SECTION (UPDATED Horizontal Layout) --- */}
       <section className="relative py-20 lg:py-32 overflow-hidden flex items-center z-10">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="flex flex-col-reverse lg:flex-row items-center justify-between gap-12 lg:gap-20">
+          <div className="flex flex-col-reverse lg:flex-row items-center justify-between gap-20 lg:gap-20">
 
             {/* --- RIGHT SIDE: THE QUOTE (Text) --- */}
             <div className="w-full lg:w-6/12 text-right dir-rtl relative">
@@ -145,7 +145,7 @@ export default function HomePage() {
               {/* Large Quote Icon for style */}
               <Quote className="absolute -top-10 -right-8 w-24 h-24 text-amber-500/10 dark:text-amber-500/20 transform -scale-x-100" />
 
-              <h2 className="relative z-10 text-3xl md:text-5xl lg:text-6xl font-black leading-tight text-slate-800 dark:text-slate-100">
+              <h2 className="relative z-10 text-center lg:text-right text-3xl md:text-5xl lg:text-6xl font-black leading-tight text-slate-800 dark:text-slate-100">
                 <span className="text-slate-400 dark:text-slate-600">&rdquo;</span>
                 باد شمع را خاموش می‌کند، اما
                 <br className="hidden md:block" />
