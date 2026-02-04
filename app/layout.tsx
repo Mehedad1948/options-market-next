@@ -17,9 +17,81 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
 export const metadata: Metadata = {
-  title: "پنل استراتژی طالب", // Updated title
-  description: "داشبورد مانیتورینگ بازار اختیار معامله",
+  // 1. Optimized Title: Includes Brand + Main Keyword + Value Proposition
+  title: {
+    template: "%s | آپشن‌یار",
+    default: "آپشن‌یار | ریسک محدود، پاداش نامحدود", 
+  },
+  
+  // 2. Rich Description: Explains WHAT it is, HOW it helps (Antifragile), and the OUTCOME (Limited Risk/Unlimited Reward)
+   description: "پلتفرم هوشمند برای شکار فرصت‌های پیش‌بینی‌نشده و سودهای نامتقارن (Asymmetric Payoffs). طراحی شده برای سرمایه‌گذاری بلندمدت و بهره‌برداری از نوسانات بزرگ، نه نوسان‌گیری روزانه.",
+  
+  // 3. Keywords: Crucial for search engines to understand the niche
+  keywords: [
+    "آپشن یار", 
+    "OptionYar", 
+    "اختیار معامله", 
+    "بورس تهران", 
+    "مدیریت ریسک", 
+    "استراتژی نامتقارن", 
+    "Antifragile", 
+    "نسیم طالب", 
+    "بلک شولز", 
+    "سود مرکب"
+  ],
+
+  // 4. Authors & Creator info
+  authors: [{ name: "OptionYar Team" }],
+  creator: "OptionYar",
+
+  // 5. Open Graph (For Telegram, LinkedIn, WhatsApp previews)
+  openGraph: {
+    type: "website",
+    locale: "fa_IR",
+    url: "https://optionyar.ir", // Replace with your actual domain
+    title: "آپشن‌یار | ریسک محدود، پاداش نامحدود",
+   description: "ابزار تخصصی برای کشف «قوی سیاه» و فرصت‌های پنهان بازار. به جای درگیری با نوسانات خرد، در موقعیت‌هایی با پتانسیل رشد نامحدود و بلندمدت سرمایه‌گذاری کنید.",
+    siteName: "آپشن‌یار",
+    // Add an image to your public folder named 'og-image.jpg' (1200x630px is best)
+    images: [
+      {
+        url: "/hero.png", 
+        width: 1200,
+        height: 630,
+        alt: "OptionYar Dashboard Preview",
+      },
+    ],
+  },
+
+  // 6. Twitter Card (For X/Twitter previews)
+  twitter: {
+    card: "summary_large_image",
+    title: "آپشن‌یار | ریسک محدود، پاداش نامحدود",
+    description: "داشبورد حرفه‌ای برای معامله‌گران اختیار معامله. جایی که نوسان دوست شماست.",
+    images: ["/hero.png"], // Reuses the OG image
+  },
+
+  // 7. Robots: Ensures Google indexes the page
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  
+  // 8. Icons: Standard favicons
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
