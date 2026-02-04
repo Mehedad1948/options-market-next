@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma"; // <--- CHANGE THIS: Import from your shared lib
+// Remove: const prisma = new PrismaClient(); 
 
-const prisma = new PrismaClient();
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 export async function POST(req: Request) {
@@ -14,21 +14,32 @@ export async function POST(req: Request) {
       const contact = update.message.contact;
       const firstName = update.message.from?.first_name || "";
 
+      console.log(`📩 Received message from ${firstName} (${chatId}): ${text}`);
+
       // ---------------------------------------------------------
       // 1. HANDLE "/start" (Lightweight Registration)
       // ---------------------------------------------------------
       if (text === "/start") {
-        // Create user if not exists, but DON'T ask for phone yet
-        await prisma.user.upsert({
-          where: { telegramId: chatId },
-          update: {}, // No changes if exists
-          create: {
-            telegramId: chatId,
-            firstName: firstName,
-            // 14 Days Free Trial
-            subscriptionExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 
-          },
-        });
+        console.log("⚡ Processing /start for:", chatId);
+        
+        try {
+          // Attempt DB Write
+          const user = await prisma.user.upsert({
+            where: { telegramId: chatId },
+            update: {}, // If user exists, do nothing
+            create: {
+              telegramId: chatId,
+              firstName: firstName,
+              notifyTelegram: true, // Auto-enable telegram notifications
+              subscriptionExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 
+            },
+          });
+          console.log("✅ DB Write Success. User ID:", user.id);
+        } catch (dbError) {
+          console.error("❌ DB Write Failed:", dbError);
+          // We continue to send the message even if DB fails, to be polite, 
+          // but looking at logs will reveal the issue.
+        }
 
         await sendMainMenu(chatId, `سلام ${firstName} خوش آمدید! 👋\n\nشما می‌توانید از سیگنال‌ها استفاده کنید.\nبرای ورود به پنل تحت وب، دکمه "🔐 فعال‌سازی داشبورد" را بزنید.`);
       }
@@ -44,10 +55,14 @@ export async function POST(req: Request) {
       // 3. HANDLE CONTACT SHARING (Update DB)
       // ---------------------------------------------------------
       else if (contact) {
-        // Normalize phone: remove '+' and ensure it's clean
-        const phone = contact.phone_number.replace("+", "").replace(/\s/g, "");
+        console.log("📱 Received Contact:", contact.phone_number);
         
-        // Update the user associated with this Telegram ID
+        // Normalize phone: remove '+' and ensure it's clean
+        let phone = contact.phone_number.replace(/\D/g, ""); // Remove non-digits
+        if (phone.startsWith("98")) phone = "+" + phone;       // +98912...
+        else if (phone.startsWith("0")) phone = "+98" + phone.substring(1); // 0912 -> +98912
+        else phone = "+" + phone;
+
         await prisma.user.update({
           where: { telegramId: chatId },
           data: { phoneNumber: phone },
@@ -69,10 +84,9 @@ export async function POST(req: Request) {
 async function sendMainMenu(chatId: string, text: string) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   
-  // A persistent menu at the bottom
   const keyboard = {
     keyboard: [
-      [{ text: "🔐 فعال‌سازی داشبورد" }], // This triggers step 2
+      [{ text: "🔐 فعال‌سازی داشبورد" }], 
       [{ text: "📊 وضعیت بازار" }]
     ],
     resize_keyboard: true,
@@ -88,7 +102,6 @@ async function sendMainMenu(chatId: string, text: string) {
 async function requestContact(chatId: string) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   
-  // Special button that asks for phone number permission
   const keyboard = {
     keyboard: [
       [
@@ -100,7 +113,7 @@ async function requestContact(chatId: string) {
       [{ text: "🔙 بازگشت" }]
     ],
     resize_keyboard: true,
-    one_time_keyboard: true, // Hide after clicking
+    one_time_keyboard: true, 
   };
 
   await fetch(url, {
