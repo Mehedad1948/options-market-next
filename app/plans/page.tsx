@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import { verifySession } from "@/lib/auth"; // Adjust path to your actual auth logic
 import { cookies } from "next/headers";
 import { Zap, Crown, Star, ArrowLeft, Gift } from "lucide-react";
+import Image from 'next/image';
 
 // Initialize Prisma (ensure this singleton pattern matches your project)
 const prisma = new PrismaClient();
@@ -57,7 +58,7 @@ export default async function PlansPage() {
 
                 {/* --- 1. USER METRIC (Curved Indicator) - Only if Logged In --- */}
                 {user && (
-                    <div className="mb-16 bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+                    <div className="mb-16 bg-white dark:bg-slate-900 rounded-3xl p-8  border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
 
                         {/* Text Info */}
                         <div className="z-10 text-center md:text-right">
@@ -223,12 +224,20 @@ function PlanCard({
     link
 }: PlanCardProps) {
     return (
-        <div className={`relative flex flex-col p-6 rounded-3xl border transition-all duration-300 group
+        <div className={`relative o flex flex-col p-6 rounded-3xl border transition-all duration-300 group
       ${isPopular
                 ? "bg-slate-900 text-white shadow-2xl shadow-amber-500/20 border-amber-500/50 scale-105 z-10"
                 : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-lg border-slate-100 dark:border-slate-800 hover:border-amber-500/30"
             }
     `}>
+
+            {/* <Image
+                width={500}
+                height={500}
+                alt='options'
+                src="/hero-2.png"
+                className='absolute bottom-0 -rotate-6 translate-y-1/3 translate-x-1/3 z-0 grayscale right-0 w-full  opacity-10  dark:mix-blend-overlay'
+            /> */}
 
             {/* Popular Badge */}
             {isPopular && (
@@ -278,7 +287,7 @@ function PlanCard({
             </div>
 
             {/* Button */}
-            <Link href={link} className={`w-full py-4 rounded-xl font-bold text-center transition-all ${isPopular
+            <Link href={link} className={`w-full relative z-10 py-4 rounded-xl font-bold text-center transition-all ${isPopular
                 ? "bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-lg shadow-amber-500/25"
                 : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white"
                 }`}>

@@ -44,7 +44,7 @@ export async function UserMenu() {
     <div className="flex items-center gap-3 md:gap-4">
       
       {/* Subscription Badge */}
-      <div className={`
+      <Link href={'/plans'} className={`
         flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border
         ${isExpired 
             ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
@@ -63,7 +63,7 @@ export async function UserMenu() {
         <span className="sm:hidden">
             {diffDays} روز
         </span>
-      </div>
+      </Link>
 
       {/* User Info */}
       <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
