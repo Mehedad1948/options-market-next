@@ -29,9 +29,9 @@ export default function RootLayout({
   return (
     /* 3. Set lang="fa" and dir="rtl" for proper alignment */
     /* 4. suppressHydrationWarning is needed for next-themes to work without errors */
-    <html lang="fa" dir="rtl" suppressHydrationWarning>
+    <html className='dark' lang="fa" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${vazirMatn.className}  antialiased font-sans`}
+        className={`${vazirMatn.className} antialiased font-sans`}
       >
         <ThemeProvider>
           {children}

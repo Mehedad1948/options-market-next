@@ -1,82 +1,115 @@
-// app/api/telegram-webhook/route.ts
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-const TELEGRAM_API = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
+const prisma = new PrismaClient();
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-// Helper to send messages back to Telegram
-async function sendMessage(chatId: string | number, text: string) {
-  await fetch(`${TELEGRAM_API}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: text,
-      parse_mode: 'Markdown', // Allows bolding text
-    }),
-  });
-}
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const update = await req.json();
 
-    // 1. Validate if it's a message
-    if (!body.message || !body.message.text) {
-      return NextResponse.json({ ok: true }); // Acknowledge generic updates
-    }
+    if (update.message) {
+      const chatId = update.message.chat.id.toString();
+      const text = update.message.text;
+      const contact = update.message.contact;
+      const firstName = update.message.from?.first_name || "";
 
-    const { text, chat, from } = body.message;
-    const telegramId = from.id.toString(); // Store as String to match Schema
-    const firstName = from.first_name || 'Trader';
-
-    // 2. Handle "/start" command
-    if (text === '/start') {
-      
-      // Check if user already exists
-      const existingUser = await prisma.user.findUnique({
-        where: { telegramId: telegramId },
-      });
-
-      if (existingUser) {
-        // SCENARIO A: Existing User
-        const expiryDate = existingUser.subscriptionExpiresAt 
-          ? new Date(existingUser.subscriptionExpiresAt).toLocaleDateString('fa-IR') 
-          : 'Expired';
-          
-        await sendMessage(
-          chat.id,
-          `Welcome back, ${firstName}! 👋\n\nYou are already registered.\nSubscription Status: *${expiryDate}*`
-        );
-      } else {
-        // SCENARIO B: New User -> Grant 2 Weeks Free
-        const twoWeeksLater = new Date();
-        twoWeeksLater.setDate(twoWeeksLater.getDate() + 14);
-
-        await prisma.user.create({
-          data: {
-            telegramId: telegramId,
+      // ---------------------------------------------------------
+      // 1. HANDLE "/start" (Lightweight Registration)
+      // ---------------------------------------------------------
+      if (text === "/start") {
+        // Create user if not exists, but DON'T ask for phone yet
+        await prisma.user.upsert({
+          where: { telegramId: chatId },
+          update: {}, // No changes if exists
+          create: {
+            telegramId: chatId,
             firstName: firstName,
-            role: 'USER',
-            notifyTelegram: true, // Default ON
-            notifyWeb: true,      // Default ON
-            subscriptionExpiresAt: twoWeeksLater, // 14 Day Trial
+            // 14 Days Free Trial
+            subscriptionExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), 
           },
         });
 
-        const expiryStr = twoWeeksLater.toLocaleDateString('fa-IR');
+        await sendMainMenu(chatId, `سلام ${firstName} خوش آمدید! 👋\n\nشما می‌توانید از سیگنال‌ها استفاده کنید.\nبرای ورود به پنل تحت وب، دکمه "🔐 فعال‌سازی داشبورد" را بزنید.`);
+      }
 
-        await sendMessage(
-          chat.id,
-          `Welcome to Taleb Signals, ${firstName}! 🚀\n\n🎉 **Account Created!**\nWe have gifted you a **14-day Free Trial**.\n\nYour subscription is active until: *${expiryStr}*\n\nYou will now receive market alerts automatically.`
-        );
+      // ---------------------------------------------------------
+      // 2. HANDLE DASHBOARD REQUEST (Ask for Phone)
+      // ---------------------------------------------------------
+      else if (text === "🔐 فعال‌سازی داشبورد" || text === "/login") {
+        await requestContact(chatId);
+      }
+
+      // ---------------------------------------------------------
+      // 3. HANDLE CONTACT SHARING (Update DB)
+      // ---------------------------------------------------------
+      else if (contact) {
+        // Normalize phone: remove '+' and ensure it's clean
+        const phone = contact.phone_number.replace("+", "").replace(/\s/g, "");
+        
+        // Update the user associated with this Telegram ID
+        await prisma.user.update({
+          where: { telegramId: chatId },
+          data: { phoneNumber: phone },
+        });
+
+        await sendMainMenu(chatId, "✅ شماره شما ثبت شد.\n\nاکنون می‌توانید با همین شماره موبایل در سایت وارد شوید.");
       }
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error('Telegram Webhook Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Webhook Error:", error);
+    return NextResponse.json({ ok: false });
   }
+}
+
+// --- Helpers ---
+
+async function sendMainMenu(chatId: string, text: string) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  
+  // A persistent menu at the bottom
+  const keyboard = {
+    keyboard: [
+      [{ text: "🔐 فعال‌سازی داشبورد" }], // This triggers step 2
+      [{ text: "📊 وضعیت بازار" }]
+    ],
+    resize_keyboard: true,
+  };
+
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text, reply_markup: keyboard }),
+  });
+}
+
+async function requestContact(chatId: string) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  
+  // Special button that asks for phone number permission
+  const keyboard = {
+    keyboard: [
+      [
+        {
+          text: "📱 تایید شماره و فعال‌سازی",
+          request_contact: true, 
+        },
+      ],
+      [{ text: "🔙 بازگشت" }]
+    ],
+    resize_keyboard: true,
+    one_time_keyboard: true, // Hide after clicking
+  };
+
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: "⚠️ برای ورود به پنل وب، ما نیاز به تایید هویت شما داریم.\n\nلطفا روی دکمه زیر کلیک کنید تا شماره شما تایید شود.",
+      reply_markup: keyboard,
+    }),
+  });
 }
