@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { runTalebStrategy } from '@/lib/engine/taleb';
 import { NotificationService } from '@/lib/services/telegram';
 import { Prisma, PrismaClient } from '@prisma/client';
+import { getTehranMarketStatus } from '@/lib/services/tehranMarketStatus';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,10 +27,12 @@ export async function GET(request: Request) {
       puts: result.super_candidates.puts,
     };
 
+    const currentStatus = getTehranMarketStatus();
+
     // 3. Save to PostgreSQL
 const savedSignal = await prisma.talebSignal.create({
   data: {
-    marketStatus: 'ACTIVE',
+    marketStatus: currentStatus,
     
     // FIX: Use 'as unknown as Prisma.InputJsonValue'
     callAdvice: (result.ai_analysis.call_suggestion ?? null) as unknown as Prisma.InputJsonValue,
