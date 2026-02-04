@@ -81,8 +81,8 @@ export default function HomePage() {
             <span className="font-bold text-amber-600 dark:text-amber-500">
               {' '}قوهای سیاه{' '}
             </span>
-            
-               بازار آپشن را شکار می‌کنیم. 
+
+            بازار آپشن را شکار می‌کنیم.
           </p>
         </div>
       </section>
@@ -93,7 +93,7 @@ export default function HomePage() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white">چرا معامله‌گران حرفه‌ای آپشن‌یار را انتخاب می‌کنند؟</h2>
             <p className="text-slate-600 dark:text-slate-400">
-               پیچیدگی‌های بازار اختیار معامله را با تکنولوژی ترکیب شده‌اند تا شما ساده‌تر تصمیم بگیرید.
+              پیچیدگی‌های بازار اختیار معامله را با تکنولوژی ترکیب شده‌اند تا شما ساده‌تر تصمیم بگیرید.
             </p>
           </div>
 
@@ -220,8 +220,14 @@ export default function HomePage() {
 
         <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">آماده شروع معاملات <span className="text-amber-500">هوشمند</span> هستید؟</h2>
-          <p className="text-slate-300 text-lg mb-10 max-w-2xl mx-auto">
-            همین حالا ثبت نام کنید و ۱۴ روز اشتراک رایگان پرمیوم دریافت کنید. بدون نیاز به کارت بانکی.
+          <p className="text-slate-300 text-lg mb-10 max-w-2xl mx-auto leading-loose">
+            همین حالا ثبت نام کنید و
+            <span className="inline-block rota -skew-x-12 bg-green-600 px-3 py-0 mx-2 rounded shadow-[0_0_15px_rgba(11, 245, 167, 0.5)] border border-green-400/30">
+              <span className="block skew-x-12 font-bold text-white text-base pt-1">
+                ۱۴ روز اشتراک رایگان
+              </span>
+            </span>
+             دریافت کنید.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
