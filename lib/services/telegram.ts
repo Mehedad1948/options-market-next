@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
+import { eventBus } from '../event-bus';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -29,11 +30,15 @@ export class NotificationService {
     }
   }
 
-  /**
-   * Placeholder for future SSE logic
-   */
-  static async broadcastEvent(event: string, data: any) {
-    // Logic for SSE to frontend clients will go here later
-    console.log(`[Event Broadcast]: ${event}`, data);
+static async broadcastEvent(eventType: string, data: any) {
+    // 1. Log it
+    console.log(`[Event Broadcast]: ${eventType}`, data);
+
+    // 2. Emit to the Event Bus (The API route is listening to this)
+    eventBus.emit('sse-message', {
+      type: eventType,
+      data: data,
+      timestamp: new Date().toISOString()
+    });
   }
 }
