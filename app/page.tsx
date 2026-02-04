@@ -27,7 +27,7 @@ export default function HomePage() {
         height={500}
         alt='options'
         src="/hero-2.png"
-        className='absolute bottom-4 right-4 z-20 w-16 md:w-64 '
+        className='absolute bottom-4 right-4 z-20 hidden lg:block md:w-64 '
       />
       {/* --- HERO SECTION --- */}
       <section className="relative pt-16 pb-16 overflow-hidden">
