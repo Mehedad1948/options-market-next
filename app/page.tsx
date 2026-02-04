@@ -76,7 +76,7 @@ export default function HomePage() {
           </div>
 
           <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mt-12 leading-relaxed">
-           با الهام از فلسفه نسیم طالب،
+            ما با الهام از فلسفه نسیم طالب،
 
             <span className="font-bold text-amber-600 dark:text-amber-500">
               {' '}قوهای سیاه{' '}
@@ -93,7 +93,7 @@ export default function HomePage() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white">چرا معامله‌گران حرفه‌ای آپشن‌یار را انتخاب می‌کنند؟</h2>
             <p className="text-slate-600 dark:text-slate-400">
-              ما پیچیدگی‌های بازار اختیار معامله را با تکنولوژی ترکیب کرده‌ایم تا شما ساده‌تر تصمیم بگیرید.
+               پیچیدگی‌های بازار اختیار معامله را با تکنولوژی ترکیب شده‌اند تا شما ساده‌تر تصمیم بگیرید.
             </p>
           </div>
 
@@ -105,7 +105,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">تحلیل هوشمند AI</h3>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                الگوریتم‌های ما تمام قراردادهای موجود در بازار را در کسری از ثانیه اسکن می‌کنند تا بهترین فرصت‌های خرید و فروش را شناسایی کنند.
+                الگوریتم‌ها تمام قراردادهای موجود در بازار را در کسری از ثانیه اسکن می‌کنند تا بهترین فرصت‌های خرید و فروش را شناسایی کنند.
               </p>
             </div>
 
@@ -116,7 +116,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">سیگنال‌های لحظه‌ای</h3>
               <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                فرصت‌ها در بازار آپشن به سرعت می‌سوزند. سیگنال‌های ما بدون تاخیر از طریق تلگرام و داشبورد به دست شما می‌رسد.
+                فرصت‌ها در بازار آپشن به سرعت می‌سوزند. سیگنال‌ها بدون تاخیر از طریق تلگرام و داشبورد به دست شما می‌رسد.
               </p>
             </div>
 
