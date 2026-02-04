@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const encoder = new TextEncoder();
 
+  console.log('❌❌❌ api stream');
+
   // Create a stream
   const customReadable = new ReadableStream({
     start(controller) {
@@ -23,6 +25,8 @@ export async function GET(req: NextRequest) {
       // 3. Handle connection close
       req.signal.addEventListener('abort', () => {
         eventBus.off('sse-message', onMessage);
+        console.log('🍎🍎🍎 Abort');
+        
         controller.close();
       });
     },
@@ -32,7 +36,7 @@ export async function GET(req: NextRequest) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }

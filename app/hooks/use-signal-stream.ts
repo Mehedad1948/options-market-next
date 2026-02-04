@@ -1,5 +1,5 @@
 // hooks/use-signal-stream.ts
-'use client'
+'use client';
 
 import { useEffect } from 'react';
 import { toast } from 'sonner'; // Or your preferred toast lib
@@ -16,21 +16,24 @@ export function useSignalStream(userSettings: UserSettings | null) {
     // Connect to the stream
     const eventSource = new EventSource('/api/stream');
 
+    console.log('🐞🐞🐞', eventSource);
+
     eventSource.onmessage = (event) => {
       const payload = JSON.parse(event.data);
       const { type, data } = payload;
 
-      console.log("New Event Received:", type);
+      console.log('New Event Received:', type);
 
       // --- ACTION 1: ALWAYS REFRESH DATA ---
       // This ensures the dashboard table/charts are always fresh
       // You could also use a state management store (Zustand/Redux) here to update data directly
-      router.refresh(); 
+      router.refresh();
 
       // --- ACTION 2: CONDITIONALLY NOTIFY ---
       // Only show the popup if the user enabled it in their profile
+      console.log('⭕⭕⭕ userSettings?.notifyWeb', userSettings?.notifyWeb);
+      
       if (userSettings?.notifyWeb) {
-        
         // Play sound (Optional)
         // const audio = new Audio('/sounds/notification.mp3');
         // audio.play();
@@ -48,7 +51,7 @@ export function useSignalStream(userSettings: UserSettings | null) {
     };
 
     eventSource.onerror = () => {
-      console.log("SSE Connection lost, retrying...");
+      console.log('SSE Connection lost, retrying...');
       eventSource.close();
     };
 
