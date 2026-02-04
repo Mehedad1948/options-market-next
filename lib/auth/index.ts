@@ -1,79 +1,48 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { SignJWT, jwtVerify } from 'jose';
+import { cookies } from 'next/headers';
 
-// 1. Define Secret Key
-const SECRET_KEY = process.env.JWT_SECRET || "your-super-secret-random-key-change-me";
-const key = new TextEncoder().encode(SECRET_KEY);
+const secretKey = process.env.JWT_SECRET || 'your-secret-key-change-this';
+const key = new TextEncoder().encode(secretKey);
 
-// 2. Define Session Payload Interface
-interface SessionPayload {
-  userId: string;
-  telegramId: string;
-  expiresAt: Date;
-}
-
-// --- Encryption / Decryption ---
-
-export async function encrypt(payload: any) {
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d") // Token valid for 7 days
-    .sign(key);
-}
-
-export async function decrypt(input: string): Promise<any> {
-  const { payload } = await jwtVerify(input, key, {
-    algorithms: ["HS256"],
-  });
-  return payload;
-}
-
-// --- Auth Actions ---
-
-/**
- * Creates a JWT session and sets it in an HTTP-Only cookie.
- * Used in API routes (e.g., verify-otp).
- */
 export async function loginUser(userId: string, telegramId: string) {
-  // 1. Create Session Data
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 Days
-  const session = await encrypt({ userId, telegramId, expiresAt: expires });
+  // Create the session data
+  const payload = { userId, telegramId, expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }; // 1 week
 
-  // 2. Set Cookie
-  // Note: In Next.js 15, cookies() is async. We await it to be safe across versions.
-  const cookieStore = await cookies(); 
-  
-  cookieStore.set("session", session, {
+  // Sign the token
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(key);
+
+  // Set the HTTP-only cookie
+ (await cookies()).set('session', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    expires: expires,
-    sameSite: "lax",
-    path: "/",
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 }
 
-/**
- * Clears the session cookie.
- */
-export async function logout() {
-  const cookieStore = await cookies();
-  cookieStore.set("session", "", { expires: new Date(0) });
+export async function getSession() {
+  const session = (await cookies()).get('session')?.value;
+  if (!session) return null;
+  return await verifySession(session);
 }
 
-/**
- * Retrieves user data from the cookie.
- * Used in Server Components and Middleware.
- */
-export async function getSession() {
-  const cookieStore = await cookies();
-  const session = cookieStore.get("session")?.value;
-  if (!session) return null;
-  
+// THIS FUNCTION IS CRITICAL FOR MIDDLEWARE
+export async function verifySession(token: string | undefined = '') {
   try {
-    return await decrypt(session);
+    const { payload } = await jwtVerify(token, key, {
+      algorithms: ['HS256'],
+    });
+    return payload;
   } catch (error) {
     return null;
   }
+}
+
+export async function logoutUser() {
+  (await cookies()).delete('session');
 }
