@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Vazirmatn, Geist_Mono } from "next/font/google"; // 1. Import Vazirmatn
 import "./globals.css";
 import { ThemeProvider } from './providers';
+import Header from './components/ui/Header';
 
 // 2. Configure Vazirmatn (The best free Persian font)
 const vazirMatn = Vazirmatn({
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body
         className={`${vazirMatn.className} antialiased font-sans`}
       >
+        <Header />
         <ThemeProvider>
           {children}
         </ThemeProvider>
