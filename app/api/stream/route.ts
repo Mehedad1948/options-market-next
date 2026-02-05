@@ -1,32 +1,44 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/api/stream/route.ts
 import { eventBus } from '@/lib/event-bus';
 import { NextRequest } from 'next/server';
+import { verifySession } from '@/lib/auth'; // Import your auth verification
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  // 1. SECURITY CHECK: Verify User Session
+  const cookie = req.cookies.get('session')?.value;
+  const session = await verifySession(cookie);
+
+  if (!session || !session.userId) {
+    // If no session, close connection immediately with 401 Unauthorized
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // 2. Setup Encoder
   const encoder = new TextEncoder();
 
-  console.log('❌❌❌ api stream');
-
-  // Create a stream
+  // 3. Create a stream
   const customReadable = new ReadableStream({
     start(controller) {
-      // 1. Define the listener
+      // Define the listener
       const onMessage = (payload: any) => {
         const message = `data: ${JSON.stringify(payload)}\n\n`;
         controller.enqueue(encoder.encode(message));
       };
 
-      // 2. Subscribe to the bus
+      // Subscribe to the bus
+      // (Optionally, you could log *who* connected here using session.userId)
+      // console.log(`User ${session.userId} connected to stream`);
       eventBus.on('sse-message', onMessage);
 
-      // 3. Handle connection close
+      // Handle connection close
       req.signal.addEventListener('abort', () => {
         eventBus.off('sse-message', onMessage);
-        console.log('🍎🍎🍎 Abort');
-        
+        console.log(`🍎 Abort connection for user: ${session.userId}`);
         controller.close();
       });
     },

@@ -1,13 +1,14 @@
-import Link from "next/link";
-import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { LogIn, User as UserIcon, Clock, AlertTriangle } from "lucide-react";
+'use client'
 
-export async function UserMenu() {
-  const session = await getSession();
+import Link from "next/link";
+import { LogIn, User as UserIcon, Clock, AlertTriangle } from "lucide-react";
+import { useUser } from '@/app/providers/user-context';
+
+export  function UserMenu() {
+  const user = useUser()
 
   // --- GUEST STATE ---
-  if (!session) {
+  if (!user) {
     return (
       <Link
         href="/login"
@@ -19,12 +20,6 @@ export async function UserMenu() {
     );
   }
 
-  // --- LOGGED IN STATE ---
-  // Fetch fresh data to ensure subscription status is accurate
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId as string },
-    select: { firstName: true, phoneNumber: true, subscriptionExpiresAt: true },
-  });
 
   if (!user) return null;
 
@@ -33,7 +28,7 @@ export async function UserMenu() {
   const expiry = new Date(user.subscriptionExpiresAt || 0);
   const diffTime = expiry.getTime() - now.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   const isExpired = diffDays <= 0;
   const isWarning = diffDays > 0 && diffDays < 7; // Less than 1 week
 
@@ -42,26 +37,26 @@ export async function UserMenu() {
 
   return (
     <div className="flex items-center gap-3 md:gap-4">
-      
+
       {/* Subscription Badge */}
       <Link href={'/plans'} className={`
         flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border
-        ${isExpired 
-            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
-            : isWarning 
-                ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800" 
-                : "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
+        ${isExpired
+          ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800"
+          : isWarning
+            ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800"
+            : "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800"
         }
       `}>
         {isWarning || isExpired ? <AlertTriangle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
         <span className="hidden sm:inline">
-            {isExpired 
-                ? "اشتراک تمام شده" 
-                : `${diffDays} روز باقی‌مانده`
-            }
+          {isExpired
+            ? "اشتراک تمام شده"
+            : `${diffDays} روز باقی‌مانده`
+          }
         </span>
         <span className="sm:hidden">
-            {diffDays} روز
+          {diffDays} روز
         </span>
       </Link>
 

@@ -3,6 +3,8 @@ import { Vazirmatn, Geist_Mono } from "next/font/google"; // 1. Import Vazirmatn
 import "./globals.css";
 import { ThemeProvider } from './providers';
 import Header from './components/ui/Header';
+import { UserProvider } from './providers/user-context';
+import { getUser } from '@/lib/services/getUser';
 
 // 2. Configure Vazirmatn (The best free Persian font)
 const vazirMatn = Vazirmatn({
@@ -22,23 +24,23 @@ export const metadata: Metadata = {
   // 1. Optimized Title: Includes Brand + Main Keyword + Value Proposition
   title: {
     template: "%s | آپشن‌یار",
-    default: "آپشن‌یار | ریسک محدود، پاداش نامحدود", 
+    default: "آپشن‌یار | ریسک محدود، پاداش نامحدود",
   },
-  
+
   // 2. Rich Description: Explains WHAT it is, HOW it helps (Antifragile), and the OUTCOME (Limited Risk/Unlimited Reward)
-   description: "پلتفرم هوشمند برای شکار فرصت‌های پیش‌بینی‌نشده و سودهای نامتقارن (Asymmetric Payoffs). طراحی شده برای سرمایه‌گذاری بلندمدت و بهره‌برداری از نوسانات بزرگ، نه نوسان‌گیری روزانه.",
-  
+  description: "پلتفرم هوشمند برای شکار فرصت‌های پیش‌بینی‌نشده و سودهای نامتقارن (Asymmetric Payoffs). طراحی شده برای سرمایه‌گذاری بلندمدت و بهره‌برداری از نوسانات بزرگ، نه نوسان‌گیری روزانه.",
+
   // 3. Keywords: Crucial for search engines to understand the niche
   keywords: [
-    "آپشن یار", 
-    "OptionYar", 
-    "اختیار معامله", 
-    "بورس تهران", 
-    "مدیریت ریسک", 
-    "استراتژی نامتقارن", 
-    "Antifragile", 
-    "نسیم طالب", 
-    "بلک شولز", 
+    "آپشن یار",
+    "OptionYar",
+    "اختیار معامله",
+    "بورس تهران",
+    "مدیریت ریسک",
+    "استراتژی نامتقارن",
+    "Antifragile",
+    "نسیم طالب",
+    "بلک شولز",
     "سود مرکب"
   ],
 
@@ -52,12 +54,12 @@ export const metadata: Metadata = {
     locale: "fa_IR",
     url: "https://optionyar.ir", // Replace with your actual domain
     title: "آپشن‌یار | ریسک محدود، پاداش نامحدود",
-   description: "ابزار تخصصی برای کشف «قوی سیاه» و فرصت‌های پنهان بازار. به جای درگیری با نوسانات خرد، در موقعیت‌هایی با پتانسیل رشد نامحدود و بلندمدت سرمایه‌گذاری کنید.",
+    description: "ابزار تخصصی برای کشف «قوی سیاه» و فرصت‌های پنهان بازار. به جای درگیری با نوسانات خرد، در موقعیت‌هایی با پتانسیل رشد نامحدود و بلندمدت سرمایه‌گذاری کنید.",
     siteName: "آپشن‌یار",
     // Add an image to your public folder named 'og-image.jpg' (1200x630px is best)
     images: [
       {
-        url: "/hero.png", 
+        url: "/hero.png",
         width: 1200,
         height: 630,
         alt: "OptionYar Dashboard Preview",
@@ -85,7 +87,7 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  
+
   // 8. Icons: Standard favicons
   icons: {
     icon: "/favicon.ico",
@@ -99,17 +101,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const userPromise = getUser()
   return (
-    /* 3. Set lang="fa" and dir="rtl" for proper alignment */
-    /* 4. suppressHydrationWarning is needed for next-themes to work without errors */
+
+
     <html className='dark' lang="fa" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${vazirMatn.className} antialiased font-sans`}
+        className={`${vazirMatn.className} dark antialiased font-sans`}
       >
-        <Header />
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <UserProvider userPromise={userPromise}>
+          <ThemeProvider>
+            <Header />
+            {children}
+          </ThemeProvider>
+        </UserProvider>
       </body>
     </html>
   );
