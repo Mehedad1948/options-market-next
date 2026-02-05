@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { Vazirmatn, Geist_Mono } from "next/font/google"; // 1. Import Vazirmatn
 import "./globals.css";
@@ -5,6 +6,7 @@ import { ThemeProvider } from './providers';
 import Header from './components/ui/Header';
 import { UserProvider } from './providers/user-context';
 import { getUser } from '@/lib/services/getUser';
+import { Suspense } from 'react';
 
 // 2. Configure Vazirmatn (The best free Persian font)
 const vazirMatn = Vazirmatn({
@@ -96,7 +98,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -111,8 +113,12 @@ export default function RootLayout({
       >
         <UserProvider userPromise={userPromise}>
           <ThemeProvider>
-            <Header />
-            {children}
+            <Suspense>
+              <Header />
+            </Suspense>
+            <Suspense>
+              {children}
+            </Suspense>
           </ThemeProvider>
         </UserProvider>
       </body>

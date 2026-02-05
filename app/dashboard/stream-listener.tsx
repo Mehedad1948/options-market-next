@@ -1,6 +1,7 @@
 'use client';
 
 import { useSignalStream } from '../hooks/use-signal-stream';
+import { useUser } from '../providers/user-context';
 
 
 interface StreamListenerProps {
@@ -9,10 +10,9 @@ interface StreamListenerProps {
     };
 }
 
-export default function StreamListener({ settings }: StreamListenerProps) {
-    // This hook handles the SSE connection, router refreshing, and Toast triggering
-    useSignalStream(settings);
-    
-    // This component is logic-only, it renders nothing visible itself
-    return null; 
+export default function StreamListener() {
+    const user = useUser()
+    useSignalStream({ notifyWeb: !!user?.notifyWeb });
+
+    return null;
 }

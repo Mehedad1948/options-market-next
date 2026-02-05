@@ -1,26 +1,15 @@
 import { getSession, logoutUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { Toaster } from 'sonner'; 
+import { Toaster } from 'sonner';
 import StreamListener from './stream-listener';
+import { Suspense } from 'react';
+import { getUser } from '@/lib/services/getUser';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-    const session = await getSession();
 
-    // Middleware should catch this, but double safety checks never hurt
-    if (!session || !session.userId) redirect('/login');
+    const user = getUser()
 
-    // Fetch fresh user data using the ID from the session token
-    const user = await prisma.user.findUnique({
-        where: { id: session.userId as string },
-        select: {
-            id: true,
-            notifyWeb: true, // We specifically need this setting
-            // Select other fields if you use them in a sidebar/header here
-        }
-    });
-
-    // Handle case where session exists but user was deleted from DB
     if (!user) redirect('/login');
 
     async function handleLogout() {
@@ -32,13 +21,18 @@ export default async function Layout({ children }: { children: React.ReactNode }
     return (
         <section>
             {/* 1. The Real-Time Listener: Handles data stream & notifications */}
-            <StreamListener settings={{ notifyWeb: user.notifyWeb }} />
+            <Suspense>
+
+            <StreamListener  />
+            </Suspense>
 
             {/* 2. The Toast Provider: Renders the actual popup bubbles */}
             <Toaster position="top-center" richColors closeButton />
 
             {/* 3. Main Content */}
-            {children}
+            <Suspense>
+                {children}
+            </Suspense>
         </section>
     );
 }

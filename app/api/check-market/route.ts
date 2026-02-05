@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma'; // FIXED: Use singleton to prevent connection leaks
 import { getTehranMarketStatus } from '@/lib/services/tehranMarketStatus';
 
-export const dynamic = 'force-dynamic';
+
 
 export async function GET(request: Request) {
   // OPTIONAL: Add a secret key check so only GitHub Actions can call this

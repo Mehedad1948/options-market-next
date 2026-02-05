@@ -3,7 +3,7 @@ import { eventBus } from '@/lib/event-bus';
 import { NextRequest } from 'next/server';
 import { verifySession } from '@/lib/auth'; // Import your auth verification
 
-export const dynamic = 'force-dynamic';
+
 
 export async function GET(req: NextRequest) {
   // 1. SECURITY CHECK: Verify User Session

@@ -1,3 +1,5 @@
+
+
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -11,7 +13,8 @@ import {
 } from "lucide-react";
 import Image from 'next/image';
 
-export default function HomePage() {
+export default async function HomePage() {
+  'use cache'
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors relative selection:bg-amber-500 selection:text-white">
 

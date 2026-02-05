@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { ThemeToggle, FilterBar, SignalRow } from './components/dashboard-ui';
 import { startOfDay, startOfWeek, startOfMonth, subDays } from 'date-fns';
 
-export const dynamic = 'force-dynamic';
+
 
 interface PageProps {
   searchParams: Promise<{
