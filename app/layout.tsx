@@ -109,7 +109,7 @@ export default async function RootLayout({
 
     <html className='dark' lang="fa" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${vazirMatn.className} dark antialiased font-sans`}
+        className={`${vazirMatn.className} antialiased font-sans`}
       >
         <UserProvider userPromise={userPromise}>
           <ThemeProvider>

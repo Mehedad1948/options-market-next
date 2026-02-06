@@ -1,12 +1,17 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 const secretKey = process.env.JWT_SECRET || 'your-secret-key-change-this';
 const key = new TextEncoder().encode(secretKey);
 
 export async function loginUser(userId: string, telegramId: string) {
   // Create the session data
-  const payload = { userId, telegramId, expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }; // 1 week
+  const payload = {
+    userId,
+    telegramId,
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+  }; // 1 week
 
   // Sign the token
   const token = await new SignJWT(payload)
@@ -16,7 +21,7 @@ export async function loginUser(userId: string, telegramId: string) {
     .sign(key);
 
   // Set the HTTP-only cookie
- (await cookies()).set('session', token, {
+  (await cookies()).set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -43,6 +48,10 @@ export async function verifySession(token: string | undefined = '') {
   }
 }
 
-export async function logoutUser() {
+export async function logoutAction() {
+  // 1. Delete the session cookie
   (await cookies()).delete('session');
+
+  // 2. Redirect to login page
+  redirect('/login');
 }

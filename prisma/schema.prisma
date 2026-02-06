@@ -56,6 +56,7 @@ model User {
     // If this date is in the future -> User is Premium/Subscribed
     // If null or past -> User is Free/Expired
     subscriptionExpiresAt DateTime?
+    payments              Payment[]
 
     // -- Notification Preferences --
     // Users can toggle these in their settings
@@ -64,6 +65,18 @@ model User {
     
     // Relation to OTPs (Optional, but good for cleanup)
     otps Otp[]
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Int      // Amount in Tomans
+  description String
+  authority   String   @unique // ZarrinPal Authority Code
+  refId       String?  // Reference ID upon success
+  status      String   // "PENDING", "SUCCESS", "FAILED"
+  createdAt   DateTime @default(now())
 }
 
 // --------------------------------------------------------

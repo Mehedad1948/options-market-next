@@ -12,11 +12,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
     if (!user) redirect('/login');
 
-    async function handleLogout() {
-        'use server';
-        await logoutUser();
-        redirect('/login');
-    }
+  
 
     return (
         <section>

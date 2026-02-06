@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { loginUser } from '@/lib/auth';
+import { updateTag } from 'next/cache';
 
 export async function POST(request: Request) {
   try {
@@ -28,6 +29,8 @@ export async function POST(request: Request) {
 
     // 3. Create Session (Cookie)
     await loginUser(otpRecord.userId, otpRecord.user.telegramId!);
+
+    updateTag('user')
 
     return NextResponse.json({ success: true });
 

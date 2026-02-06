@@ -12,7 +12,7 @@ export function BotButton() {
     >
       <Bot className="w-4 h-4" />
       <span className="hidden sm:inline">ربات تلگرام</span>
-      <ExternalLink className="w-3 h-3 opacity-50" />
+      <ExternalLink className="w-3 hidden sm:inline h-3 opacity-50" />
     </a>
   );
 }

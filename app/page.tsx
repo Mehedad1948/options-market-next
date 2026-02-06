@@ -148,7 +148,7 @@ export default async function HomePage() {
               {/* Large Quote Icon for style */}
               <Quote className="absolute -top-10 -right-8 w-24 h-24 text-amber-500/10 dark:text-amber-500/20 transform -scale-x-100" />
 
-              <h2 className="relative z-10 text-center lg:text-right text-3xl md:text-5xl  font-black leading-24 text-slate-800 dark:text-slate-100">
+              <h2 className="relative z-10 text-center lg:text-right text-2xl md:text-5xl  font-black leading-12 md:leading-24 text-slate-800 dark:text-slate-100">
                 <span className="text-slate-400 dark:text-slate-600">&rdquo;</span>
                 باد شمع را خاموش می‌کند، اما
                 <br className="hidden md:block" />

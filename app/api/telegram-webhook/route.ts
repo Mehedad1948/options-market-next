@@ -71,7 +71,7 @@ export async function POST(req: Request) {
           data: { phoneNumber: phone },
         });
 
-          const dashboardLink = `${process.env.BASE_URL}/dashboard`;
+          const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
     
     // Update 1: Dashboard Link added
     await sendMainMenu(chatId, `✅ شماره شما ثبت شد.
