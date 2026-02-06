@@ -3,7 +3,7 @@
 import iv from 'implied-volatility';
 import axios from 'axios';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { TradeSuggestion } from '@/types/taleb';
+import { TalebResult, TradeSuggestion } from '@/types/taleb';
 
 // Config
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyCubVc7Xso_Cr6ebxnFRPSwXW51lewGmVQ';
@@ -16,14 +16,6 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
 // Helper
 const cleanNum = (val: any) => (!val ? 0 : (typeof val === 'number' ? val : parseFloat(val.toString().replace(/,/g, ''))));
 
-export interface TalebResult {
-  notify_me: boolean;
-  ai_analysis: {
-    call_suggestion: TradeSuggestion;
-    put_suggestion: TradeSuggestion;
-  };
-  super_candidates: {calls: any[]; puts: any[];};
-}
 
 
 
@@ -90,21 +82,48 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   };
 
   // 4. AI Analysis
-  if (topCalls.length > 0 || topPuts.length > 0) {
+if (topCalls.length > 0 || topPuts.length > 0) {
     try {
         const formatList = (list: any[]) => list.map(c => `${c.symbol} | P:${c.data.price} | K:${c.data.strike} | Lev:${c.data.gearing.toFixed(1)} | IV:${(c.data.iv * 100).toFixed(0)}%`).join('\n');
         
-        const prompt = `Analyze Iranian Options. Top 5 Calls: \n${formatList(topCalls)}\n Top 5 Puts: \n${formatList(topPuts)}\n. 
-        Select ONE best Call and ONE best Put. Criteria: High Leverage, Low IV.
-        Output JSON: { "call_suggestion": { "decision": "BUY"|"WAIT", "symbol": "...", "max_entry_price": 0, "reasoning": "Persian Only" }, "put_suggestion": { ... } }`;
+        // UPDATED PROMPT
+        const prompt = `
+        Analyze Iranian Options Market.
+        Top 5 Calls: \n${formatList(topCalls)}\n
+        Top 5 Puts: \n${formatList(topPuts)}\n. 
+        
+        Task:
+        1. Analyze the general volatility (IV) and risk.
+        2. Select ONE best Call and ONE best Put based on Taleb Strategy (High Gearing, Cheap IV).
+        3. Explain strictly in Persian.
+
+        Output JSON format:
+        { 
+          "market_sentiment": "Short summary of market status (e.g., Low volatility, safe to enter)",
+          "call_suggestion": { 
+              "decision": "BUY"|"WAIT", 
+              "symbol": "...", 
+              "entry_price": 0, 
+              "reasoning": "Why this specific call?" 
+          }, 
+          "put_suggestion": { 
+              "decision": "BUY"|"WAIT", 
+              "symbol": "...", 
+              "entry_price": 0, 
+              "reasoning": "Why this specific put?" 
+          } 
+        }`;
         
         const result = await model.generateContent(prompt);
-        aiDecision = JSON.parse(result.response.text().replace(/```json|```/g, '').trim());
+        const text = result.response.text().replace(/```json|```/g, '').trim();
+        aiDecision = JSON.parse(text);
+
     } catch (e) {
-        console.error("AI Failed, using fallback");
-        // Fallback logic could go here
+        console.error("AI Failed", e);
+        // Ensure fallback structure matches new interface
+        aiDecision.market_sentiment = "Error in AI generation";
     }
-  }
+}
 
   const notify_me = superCandidates.length > 0 || aiDecision.call_suggestion.decision === 'BUY' || aiDecision.put_suggestion.decision === 'BUY';
 

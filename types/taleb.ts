@@ -1,15 +1,21 @@
-// The shape of your advice object
+// types/taleb.ts
 export interface TradeSuggestion {
   decision: "BUY" | "WAIT";
   symbol: string | null;
-  max_entry_price: number;
-  reasoning: string;
+  entry_price: number;
+  // Specific reasoning for THIS specific option
+  reasoning: string; 
 }
 
-// The shape of the Prisma row (helper type)
-import { TalebSignal } from "@prisma/client";
+export interface TalebAIAnalysis {
+  // Global market analysis (e.g., "IV is generally low today...")
+  market_sentiment: string; 
+  call_suggestion: TradeSuggestion;
+  put_suggestion: TradeSuggestion;
+}
 
-export interface TalebSignalWithTypes extends Omit<TalebSignal, 'callAdvice' | 'putAdvice'> {
-  callAdvice: TradeSuggestion | null;
-  putAdvice: TradeSuggestion | null;
+export interface TalebResult {
+  notify_me: boolean;
+  ai_analysis: TalebAIAnalysis;
+  super_candidates: { calls: any[]; puts: any[]; };
 }
