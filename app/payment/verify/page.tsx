@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 // PLANS MAPPING (Should match actions.ts logic)
 const PLAN_DAYS = {
@@ -12,7 +13,9 @@ const PLAN_DAYS = {
 };
 
 export default async function VerifyPage({ searchParams }: { searchParams: { Authority: string; Status: string } }) {
-  const { Authority, Status } = searchParams;
+  const { Authority, Status } = await searchParams;
+
+
 
   // 1. Basic Validation
   if (!Authority || Status !== "OK") {
@@ -33,18 +36,18 @@ export default async function VerifyPage({ searchParams }: { searchParams: { Aut
 
   if (verification.success) {
     // 4. Update Database (Success)
-    
+
     // Calculate new expiry date
-    const currentExpiry = payment.user.subscriptionExpiresAt 
-      ? new Date(payment.user.subscriptionExpiresAt) 
+    const currentExpiry = payment.user.subscriptionExpiresAt
+      ? new Date(payment.user.subscriptionExpiresAt)
       : new Date();
-    
+
     // If expired, start from now. If active, add to existing.
     const startDate = currentExpiry > new Date() ? currentExpiry : new Date();
-    
+
     // Determine days based on description (simple mapping)
     const daysToAdd = PLAN_DAYS[payment.description as keyof typeof PLAN_DAYS] || 30;
-    
+
     startDate.setDate(startDate.getDate() + daysToAdd);
 
     // Transaction
@@ -58,6 +61,8 @@ export default async function VerifyPage({ searchParams }: { searchParams: { Aut
         data: { subscriptionExpiresAt: startDate }
       })
     ]);
+
+        revalidatePath('/', 'layout'); 
 
     return <ResultView success={true} message="اشتراک شما با موفقیت فعال شد." refId={verification.refId?.toString() || ""} />;
   } else {
@@ -75,16 +80,15 @@ function ResultView({ success, message, refId }: { success: boolean; message: st
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-md w-full text-center shadow-xl">
-        <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6 ${
-          success ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-        }`}>
+        <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6 ${success ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+          }`}>
           {success ? <CheckCircle className="w-10 h-10" /> : <XCircle className="w-10 h-10" />}
         </div>
-        
+
         <h1 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">
           {success ? "پرداخت موفق" : "پرداخت ناموفق"}
         </h1>
-        
+
         <p className="text-slate-500 mb-6">{message}</p>
 
         {success && refId && (
@@ -94,8 +98,8 @@ function ResultView({ success, message, refId }: { success: boolean; message: st
           </div>
         )}
 
-        <Link 
-          href="/dashboard" 
+        <Link
+          href="/dashboard"
           className="block w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl transition-colors"
         >
           بازگشت به داشبورد

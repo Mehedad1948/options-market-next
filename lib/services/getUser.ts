@@ -1,8 +1,7 @@
-import { cache } from 'react';
-import { prisma } from '../prisma';
-import { getSession } from '../auth';
 import { userDashboardSelect } from '@/types/user';
-import { cacheTag } from 'next/cache';
+import { cache } from 'react';
+import { getSession } from '../auth';
+import { prisma } from '../prisma';
 
 export const getUser = cache(async () => {
   const session = await getSession();
