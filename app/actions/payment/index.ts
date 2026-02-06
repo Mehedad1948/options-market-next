@@ -1,11 +1,10 @@
 'use server';
 
-import { getSession } from "@/lib/auth";
-import { prisma } from '@/lib/prisma';
+import { getSession } from "@/lib/auth"; // Adjust path to your auth
+import { prisma } from '@/lib/prisma';   // Adjust path to your prisma
 import { requestPayment } from "@/lib/zarrinpal";
 import { redirect } from "next/navigation";
 
-// Define Plans strictly on the server to prevent price tampering
 const PLANS = {
   "1-month": { price: 100000, days: 30, name: "اشتراک ۱ ماهه" },
   "6-month": { price: 500000, days: 180, name: "اشتراک ۶ ماهه" },
@@ -16,46 +15,44 @@ export async function initiatePaymentAction(planKey: string) {
   // 1. Validate Session
   const session = await getSession();
   
-  // Your session payload is { userId: string, ... }, not { user: { ... } }
   if (!session || !session.userId) {
     redirect("/login?returnUrl=/plans");
   }
 
-  // 2. FETCH FULL USER DATA FROM DATABASE
-  // We need this to get the phoneNumber/mobile and ensure user exists
+  // 2. Fetch User
   const user = await prisma.user.findUnique({
     where: { id: session.userId as string },
   });
 
-  if (!user) {
-    // Edge case: Session exists but user was deleted
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
   const plan = PLANS[planKey as keyof typeof PLANS];
-  if (!plan) throw new Error("Invalid Plan");
+  if (!plan) throw new Error("Plan not found");
 
-  // 3. Request Authority from ZarrinPal
+  // 3. Prepare Data
   const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/payment/verify`;
   
-  // Use 'user.phoneNumber' from database. 
-  // (Assuming your schema uses 'phoneNumber', if it is 'mobile' change it here)
-  const userMobile = user.phoneNumber || ""; 
+  // Clean mobile number (Send undefined if empty to prevent validation error)
+  const userMobile = user.phoneNumber && user.phoneNumber.length >= 10 
+    ? user.phoneNumber 
+    : undefined;
 
+  // 4. Call ZarrinPal
   const zpResponse = await requestPayment({
     amount: plan.price,
-    description: `خرید ${plan.name} - کاربر ${userMobile}`,
+    description: `خرید ${plan.name}`,
     callbackUrl: callbackUrl,
     mobile: userMobile,
-    // email: user.email // Optional: Add if you have email in schema
   });
 
+  // 5. Check Failure
   if (!zpResponse.success || !zpResponse.authority) {
-    console.error("ZarrinPal Error:", zpResponse.error);
-    throw new Error("Payment Gateway Error");
+    // This logs to your SERVER terminal. Check it to see the real error!
+    console.error("❌ Payment Failed. Details:", zpResponse.error);
+    throw new Error(`درگاه پرداخت: ${zpResponse.error}`);
   }
 
-  // 4. Save Pending Payment to DB
+  // 6. Save DB Record
   await prisma.payment.create({
     data: {
       userId: user.id,
@@ -66,9 +63,8 @@ export async function initiatePaymentAction(planKey: string) {
     }
   });
 
-  // 5. Redirect User to Bank
+  // 7. Redirect
   if (zpResponse.url) {
      redirect(zpResponse.url);
   }
- 
 }

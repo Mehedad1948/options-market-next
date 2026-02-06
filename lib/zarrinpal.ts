@@ -1,7 +1,8 @@
-const ZARINPAL_MERCHANT_ID = "41414141-4141-4141-4141-414141414141"; // Sandbox Test ID
+// lib/zarrinpal.ts
+const ZARINPAL_MERCHANT_ID = process.env.ZARRINPAL_MERCHANT_ID || "41414141-4141-4141-4141-414141414141"; 
 
-// Toggle this to false when going to production
-const IS_SANDBOX = true; 
+// Auto-detect environment
+const IS_SANDBOX = process.env.NODE_ENV === "development"; 
 
 const BASE_URL = IS_SANDBOX 
   ? "https://sandbox.zarinpal.com/pg/v4/payment" 
@@ -12,7 +13,7 @@ const GATEWAY_URL = IS_SANDBOX
   : "https://www.zarinpal.com/pg/StartPay";
 
 interface PaymentRequest {
-  amount: number; // In Tomans
+  amount: number; // Input in Tomans
   callbackUrl: string;
   description: string;
   email?: string;
@@ -21,22 +22,37 @@ interface PaymentRequest {
 
 export async function requestPayment(data: PaymentRequest) {
   try {
+    console.log("🔌 Initiating ZarrinPal Request...", {
+      url: `${BASE_URL}/request.json`,
+      merchant_id: ZARINPAL_MERCHANT_ID,
+      amountToman: data.amount
+    });
+
     const response = await fetch(`${BASE_URL}/request.json`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       body: JSON.stringify({
         merchant_id: ZARINPAL_MERCHANT_ID,
-        amount: data.amount, // ZarinPal V4 usually takes Toman if configured, but check docs. Usually Rials. 
-        currency: "IRT", // Using Toman
+        amount: data.amount * 10, // CONVERT TOMAN TO RIAL (Required)
         callback_url: data.callbackUrl,
         description: data.description,
-        metadata: { email: data.email, mobile: data.mobile }
+        metadata: { 
+          email: data.email || "", 
+          mobile: data.mobile || "" 
+        }
       }),
       cache: 'no-store'
     });
 
     const result = await response.json();
     
+    // Log the raw response to see specific error codes (like -9, -10, etc.)
+    console.log("📡 ZarrinPal Response:", JSON.stringify(result, null, 2));
+
+    // Check for success (Code 100)
     if (result.data && result.data.code === 100) {
       return {
         success: true,
@@ -44,21 +60,25 @@ export async function requestPayment(data: PaymentRequest) {
         url: `${GATEWAY_URL}/${result.data.authority}`
       };
     }
-    return { success: false, error: "Failed to initiate payment" };
+
+    // Return specific error message
+    const errorMsg = result.errors ? JSON.stringify(result.errors) : "Unknown Error";
+    return { success: false, error: errorMsg };
+
   } catch (error) {
-    console.error("ZarinPal Request Error:", error);
-    return { success: false, error: "Connection error" };
+    console.error("💥 ZarrinPal Network Error:", error);
+    return { success: false, error: "Network/Connection Error" };
   }
 }
 
-export async function verifyPayment(authority: string, amount: number) {
+export async function verifyPayment(authority: string, amountToman: number) {
   try {
     const response = await fetch(`${BASE_URL}/verify.json`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         merchant_id: ZARINPAL_MERCHANT_ID,
-        amount: amount,
+        amount: amountToman * 10, // Convert to Rial
         authority: authority
       }),
       cache: 'no-store'
@@ -66,7 +86,6 @@ export async function verifyPayment(authority: string, amount: number) {
 
     const result = await response.json();
 
-    // Code 100 = Success, Code 101 = Verified (Double verification)
     if (result.data && (result.data.code === 100 || result.data.code === 101)) {
       return {
         success: true,
@@ -75,7 +94,7 @@ export async function verifyPayment(authority: string, amount: number) {
     }
     return { success: false };
   } catch (error) {
-    console.error("ZarinPal Verify Error:", error);
+    console.error("Verify Error:", error);
     return { success: false };
   }
 }
