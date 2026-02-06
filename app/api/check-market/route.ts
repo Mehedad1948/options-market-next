@@ -34,7 +34,7 @@ export async function GET(request: Request) {
         putAdvice: (result.ai_analysis.put_suggestion ?? null) as unknown as Prisma.InputJsonValue,
 
         // Remember to include the required aiReasoning field
-        aiReasoning: result.ai_analysis.call_suggestion?.reasoning || "No reasoning provided",
+        aiReasoning: result.ai_analysis.call_suggestion?.reasoning || "موردی برای توصیه یافت نشد.",
 
         // Apply the same fix to candidates if needed
         candidates: candidatesPayload as unknown as Prisma.InputJsonValue,
