@@ -173,7 +173,7 @@ export function PlanFormWrapper({ planKey, buttonText, isPopular = false }: Plan
       console.log('🍎🍎🍎', state);
 
       // Show toast on error
-      toast.error(state.message);
+      toast.error('خطا دراتصال به درگاه پرداخت');
     }
   }, [state]);
 
