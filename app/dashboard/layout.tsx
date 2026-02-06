@@ -1,10 +1,8 @@
-import { getSession, logoutUser } from '@/lib/auth';
+import { getUser } from '@/lib/services/getUser';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import StreamListener from './stream-listener';
-import { Suspense } from 'react';
-import { getUser } from '@/lib/services/getUser';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
 
