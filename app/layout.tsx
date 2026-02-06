@@ -7,6 +7,7 @@ import Header from './components/ui/Header';
 import { UserProvider } from './providers/user-context';
 import { getUser } from '@/lib/services/getUser';
 import { Suspense } from 'react';
+import { Toaster } from 'sonner';
 
 // 2. Configure Vazirmatn (The best free Persian font)
 const vazirMatn = Vazirmatn({
@@ -112,6 +113,7 @@ export default async function RootLayout({
         className={`${vazirMatn.className} antialiased font-sans`}
       >
         <UserProvider userPromise={userPromise}>
+          <Toaster position="top-center" richColors closeButton />
           <ThemeProvider>
             <Suspense>
               <Header />
