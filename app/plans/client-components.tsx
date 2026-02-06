@@ -8,7 +8,7 @@ import { useUser } from '../providers/user-context';
 function getDaysRemaining(expiryDate: Date | null | string): number {
   if (!expiryDate) return 0;
   // Handle both Date object and ISO string (from JSON serialization)
-  const expiry = new Date(expiryDate); 
+  const expiry = new Date(expiryDate);
   const now = new Date();
   const diffTime = expiry.getTime() - now.getTime();
   if (diffTime <= 0) return 0;
@@ -25,7 +25,7 @@ export function UserSubscriptionGauge() {
 
   return (
     <div className="mb-16 bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
-      
+
       {/* Text Info */}
       <div className="z-10 text-center md:text-right">
         <h2 className="text-2xl font-bold mb-2">
@@ -114,3 +114,73 @@ export function NavigationFooter() {
     </div>
   );
 }
+
+
+import { useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+import { initiatePaymentAction, ActionState } from '../actions/payment';
+
+// --- A NEW, HOOK-AWARE BUY BUTTON ---
+function SubmitButton({ text, isPopular }: { text: string, isPopular: boolean }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={`w-full cursor-pointer relative z-10 py-4 rounded-xl font-bold text-center transition-all flex items-center justify-center gap-2
+      ${isPopular
+          ? "bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-lg shadow-amber-500/25"
+          : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white"
+        }
+      disabled:opacity-70 disabled:cursor-not-allowed`}
+    >
+      {pending ? (
+        <>
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>لطفا صبر کنید...</span>
+        </>
+      ) : (
+        text
+      )}
+    </button>
+  );
+}
+
+// --- THE FORM WRAPPER ---
+interface PlanFormWrapperProps {
+  planKey: string;
+  buttonText: string;
+  isPopular?: boolean;
+}
+
+export function PlanFormWrapper({ planKey, buttonText, isPopular = false }: PlanFormWrapperProps) {
+  const initialState: ActionState = { success: false, message: "" };
+
+  // Bind the planKey to the server action
+  const initiatePaymentWithPlan = initiatePaymentAction.bind(null, planKey);
+  const [state, formAction] = useFormState(initiatePaymentWithPlan, initialState);
+
+  useEffect(() => {
+    if (state.success && state.url) {
+      toast.success(state.message);
+      // Redirect on success
+      window.location.href = state.url;
+    } else if (!state.success && state.message) {
+
+      console.log('🍎🍎🍎', state);
+
+      // Show toast on error
+      toast.error(state.message);
+    }
+  }, [state]);
+
+  return (
+    <form action={formAction}>
+      <SubmitButton text={buttonText} isPopular={isPopular} />
+    </form>
+  );
+}
+

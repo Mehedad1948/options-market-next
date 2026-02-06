@@ -4,6 +4,7 @@ import { CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import RevalidatePathClient from '@/app/components/utils/revalidatePathClient';
 
 // PLANS MAPPING (Should match actions.ts logic)
 const PLAN_DAYS = {
@@ -62,7 +63,7 @@ export default async function VerifyPage({ searchParams }: { searchParams: { Aut
       })
     ]);
 
-        revalidatePath('/', 'layout'); 
+    revalidatePath('/', 'layout');
 
     return <ResultView success={true} message="اشتراک شما با موفقیت فعال شد." refId={verification.refId?.toString() || ""} />;
   } else {
@@ -79,6 +80,7 @@ export default async function VerifyPage({ searchParams }: { searchParams: { Aut
 function ResultView({ success, message, refId }: { success: boolean; message: string; refId?: string }) {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+      {success && <RevalidatePathClient path={'/'} type='layout' />}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-md w-full text-center shadow-xl">
         <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6 ${success ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
           }`}>

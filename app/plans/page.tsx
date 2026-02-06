@@ -1,9 +1,10 @@
 import React, { Suspense } from "react";
 import { Zap, Crown, Star, Loader2 } from "lucide-react";
-import { 
-  UserSubscriptionGauge, 
-  PromotionalHeader, 
-  NavigationFooter 
+import {
+    UserSubscriptionGauge,
+    PromotionalHeader,
+    NavigationFooter,
+    PlanFormWrapper
 } from "./client-components";
 import { initiatePaymentAction } from '../actions/payment';
 // Import the Server Action
@@ -12,18 +13,18 @@ import { initiatePaymentAction } from '../actions/payment';
 // Needs to be a client component hook if extracted, but inside a Server Action form works fine.
 // We'll use a simple button here. Ideally, use `useFormStatus` for loading state.
 function BuyButton({ text, isPopular }: { text: string, isPopular: boolean }) {
-  return (
-    <button 
-      type="submit"
-      className={`w-full relative z-10 py-4 rounded-xl font-bold text-center transition-all flex items-center justify-center gap-2
+    return (
+        <button
+            type="submit"
+            className={`w-full relative z-10 py-4 rounded-xl font-bold text-center transition-all flex items-center justify-center gap-2
       ${isPopular
-        ? "bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-lg shadow-amber-500/25"
-        : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white"
-      }`}
-    >
-      {text}
-    </button>
-  );
+                    ? "bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-lg shadow-amber-500/25"
+                    : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white"
+                }`}
+        >
+            {text}
+        </button>
+    );
 }
 
 // --- SHARED COMPONENT: PLAN CARD ---
@@ -44,9 +45,8 @@ interface PlanCardProps {
 function PlanCard({
     planKey, title, price, originalPrice, period, badge, icon, highlight, description, buttonText, isPopular = false
 }: PlanCardProps) {
-    
+
     // Create a specific server action binder for this plan
-    const buyAction = initiatePaymentAction.bind(null, planKey);
 
     return (
         <div className={`relative flex flex-col p-6 rounded-3xl border transition-all duration-300 group
@@ -62,7 +62,7 @@ function PlanCard({
                     </span>
                 </div>
             )}
-            
+
             <div className="mb-6">
                 <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 ${isPopular ? "bg-amber-500/20 text-amber-500" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}>
                     {icon}
@@ -96,81 +96,83 @@ function PlanCard({
             </div>
 
             {/* FORM WRAPPER FOR SERVER ACTION */}
-            <form action={buyAction}>
-                <BuyButton text={buttonText} isPopular={isPopular} />
-            </form>
+            <PlanFormWrapper
+                planKey={planKey}
+                buttonText={buttonText}
+                isPopular={isPopular}
+            />
         </div>
     );
 }
 
 // Loading Fallback
 function GaugeSkeleton() {
-  return <div className="mb-16 w-full h-48 bg-slate-100 dark:bg-slate-900/50 rounded-3xl animate-pulse" />;
+    return <div className="mb-16 w-full h-48 bg-slate-100 dark:bg-slate-900/50 rounded-3xl animate-pulse" />;
 }
 
 export default function PlansPage() {
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 dark:bg-slate-800/20 rounded-full blur-[120px]" />
-      </div>
+    return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px]" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 dark:bg-slate-800/20 rounded-full blur-[120px]" />
+            </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-12 max-w-5xl">
-        <Suspense fallback={<GaugeSkeleton />}>
-           <UserSubscriptionGauge />
-        </Suspense>
+            <div className="relative z-10 container mx-auto px-4 py-12 max-w-5xl">
+                <Suspense fallback={<GaugeSkeleton />}>
+                    <UserSubscriptionGauge />
+                </Suspense>
 
-        <Suspense fallback={<div className="h-32" />}>
-           <PromotionalHeader />
-        </Suspense>
+                <Suspense fallback={<div className="h-32" />}>
+                    <PromotionalHeader />
+                </Suspense>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {/* PLAN 1 */}
-            <PlanCard
-                planKey="1-month" 
-                title="اشتراک ماهانه"
-                price="۱۰۰,۰۰۰"
-                period="یک ماه"
-                icon={<Zap className="w-6 h-6" />}
-                highlight="شروع مسیر"
-                description="مناسب برای تست استراتژی‌ها و آشنایی با محیط."
-                buttonText="خرید اشتراک"
-            />
-            {/* PLAN 2 */}
-            <PlanCard
-                planKey="6-month"
-                title="اشتراک ۶ ماهه"
-                price="۵۰۰,۰۰۰"
-                originalPrice="۶۰۰,۰۰۰"
-                period="شش ماه"
-                badge="۱ ماه رایگان"
-                icon={<Star className="w-6 h-6" />}
-                highlight="اقتصادی"
-                description="پرداخت هزینه ۵ ماه، دریافت ۶ ماه سرویس کامل."
-                buttonText="خرید با تخفیف"
-                isPopular={false}
-            />
-            {/* PLAN 3 */}
-            <PlanCard
-                planKey="1-year"
-                title="اشتراک سالانه"
-                price="۹۰۰,۰۰۰"
-                originalPrice="۱,۲۰۰,۰۰۰"
-                period="یک سال"
-                badge="۳ ماه رایگان"
-                icon={<Crown className="w-6 h-6" />}
-                highlight="پیشنهاد حرفه‌ای‌ها"
-                description="بهترین ارزش خرید. ۳ ماه استفاده کاملاً رایگان."
-                buttonText="سرمایه‌گذاری هوشمند"
-                isPopular={true}
-            />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                    {/* PLAN 1 */}
+                    <PlanCard
+                        planKey="1-month"
+                        title="اشتراک ماهانه"
+                        price="۱۰۰,۰۰۰"
+                        period="یک ماه"
+                        icon={<Zap className="w-6 h-6" />}
+                        highlight="شروع مسیر"
+                        description="مناسب برای تست استراتژی‌ها و آشنایی با محیط."
+                        buttonText="خرید اشتراک"
+                    />
+                    {/* PLAN 2 */}
+                    <PlanCard
+                        planKey="6-month"
+                        title="اشتراک ۶ ماهه"
+                        price="۵۰۰,۰۰۰"
+                        originalPrice="۶۰۰,۰۰۰"
+                        period="شش ماه"
+                        badge="۱ ماه رایگان"
+                        icon={<Star className="w-6 h-6" />}
+                        highlight="اقتصادی"
+                        description="پرداخت هزینه ۵ ماه، دریافت ۶ ماه سرویس کامل."
+                        buttonText="خرید با تخفیف"
+                        isPopular={false}
+                    />
+                    {/* PLAN 3 */}
+                    <PlanCard
+                        planKey="1-year"
+                        title="اشتراک سالانه"
+                        price="۹۰۰,۰۰۰"
+                        originalPrice="۱,۲۰۰,۰۰۰"
+                        period="یک سال"
+                        badge="۳ ماه رایگان"
+                        icon={<Crown className="w-6 h-6" />}
+                        highlight="پیشنهاد حرفه‌ای‌ها"
+                        description="بهترین ارزش خرید. ۳ ماه استفاده کاملاً رایگان."
+                        buttonText="سرمایه‌گذاری هوشمند"
+                        isPopular={true}
+                    />
+                </div>
+
+                <Suspense fallback={<div className="mt-16 h-10" />}>
+                    <NavigationFooter />
+                </Suspense>
+            </div>
         </div>
-
-        <Suspense fallback={<div className="mt-16 h-10" />}>
-            <NavigationFooter />
-        </Suspense>
-      </div>
-    </div>
-  );
+    );
 }
