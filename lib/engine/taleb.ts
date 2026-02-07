@@ -3,25 +3,19 @@
 import iv from 'implied-volatility';
 import axios from 'axios';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { TalebResult, TradeSuggestion } from '@/types/taleb';
+import { TalebResult } from '@/types/taleb';
 
 // Config
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyCubVc7Xso_Cr6ebxnFRPSwXW51lewGmVQ';
+// NOTE: Remove the hardcoded fallback key for security. Ensure GEMINI_API_KEY is in your .env file.
 const API_URL = `https://BrsApi.ir/Api/Tsetmc/Option.php?key=${process.env.BRS_API_KEY || 'FreeWsXDnKpRTg7dfqRMzRlYSYeA83FN'}`;
 const RISK_FREE_RATE = 0.3;
-
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Helper
 const cleanNum = (val: any) => (!val ? 0 : (typeof val === 'number' ? val : parseFloat(val.toString().replace(/,/g, ''))));
 
-
-
-
 export async function runTalebStrategy(): Promise<TalebResult> {
   console.log('🔄 Engine: Running Taleb Strategy...');
-  
+
   // 1. Fetch Data
   const { data: rawData } = await axios.get(API_URL, { timeout: 10000 });
   if (!Array.isArray(rawData)) throw new Error("Invalid Data from Provider");
@@ -32,7 +26,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     const strike = cleanNum(option.price_strike);
     const price = cleanNum(option.pc);
     const days = cleanNum(option.day_remain);
-    
+
     if (days <= 2 || price <= 0 || spot <= 0 || cleanNum(option.interest_open) < 10) return null;
 
     const isCall = option.type?.toLowerCase().includes('call');
@@ -44,10 +38,10 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
     return {
       symbol: option.l18,
-      data: { 
-        price, strike, days, iv: impliedVol || 0, 
-        gearing: spot / price, 
-        moneyness: (strike / spot) - 1, 
+      data: {
+        price, strike, days, iv: impliedVol || 0,
+        gearing: spot / price,
+        moneyness: (strike / spot) - 1,
         type: typeStr,
         openInterest: cleanNum(option.interest_open)
       }
@@ -65,7 +59,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   });
 
   const sortFn = (a: any, b: any) => (b.data.gearing / (b.data.iv || 1)) - (a.data.gearing / (a.data.iv || 1));
-  
+
   // Super Candidates (Gearing > 10, IV < 1.0)
   const superRaw = filtered.filter((c: any) => c.data.gearing > 10 && c.data.iv < 1.0);
   const superCalls = superRaw.filter((c: any) => c.data.type === 'call').sort(sortFn).slice(0, 5);
@@ -78,56 +72,75 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
   let aiDecision: any = {
     call_suggestion: { decision: "WAIT", symbol: null, max_entry_price: 0, reasoning: "" },
-    put_suggestion: { decision: "WAIT", symbol: null, max_entry_price: 0, reasoning: "" }
+    put_suggestion: { decision: "WAIT", symbol: null, max_entry_price: 0, reasoning: "" },
+    market_sentiment: "No significant data for analysis."
   };
 
   // 4. AI Analysis
-if (topCalls.length > 0 || topPuts.length > 0) {
-    try {
+  if (topCalls.length > 0 || topPuts.length > 0) {
+    // CHECK API KEY EXISTENCE
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      console.error("❌ MISSING GEMINI_API_KEY in .env file");
+      aiDecision.market_sentiment = "System Error: Missing AI Key";
+    } else {
+      try {
+        // INITIALIZE INSIDE THE FUNCTION TO ENSURE ENV VARS ARE LOADED
+        const genAI = new GoogleGenerativeAI(apiKey);
+        // Use flash as it is stable and fast
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
         const formatList = (list: any[]) => list.map(c => `${c.symbol} | P:${c.data.price} | K:${c.data.strike} | Lev:${c.data.gearing.toFixed(1)} | IV:${(c.data.iv * 100).toFixed(0)}%`).join('\n');
-        
-        // UPDATED PROMPT
-        const prompt = `
+
+        const promptText = `
         Analyze Iranian Options Market.
-        Top 5 Calls: \n${formatList(topCalls)}\n
-        Top 5 Puts: \n${formatList(topPuts)}\n. 
+        Top 5 Calls: 
+        ${formatList(topCalls)}
+        
+        Top 5 Puts: 
+        ${formatList(topPuts)}
         
         Task:
         1. Analyze the general volatility (IV) and risk.
         2. Select ONE best Call and ONE best Put based on Taleb Strategy (High Gearing, Cheap IV).
         3. Explain strictly in Persian.
 
-        Output JSON format:
+        Output JSON format ONLY (no markdown code blocks):
         { 
-          "market_sentiment": "Short summary of market status (e.g., Low volatility, safe to enter)",
+          "market_sentiment": "Short summary...",
           "call_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
               "entry_price": 0, 
-              "reasoning": "Why this specific call?" 
+              "reasoning": "..." 
           }, 
           "put_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
               "entry_price": 0, 
-              "reasoning": "Why this specific put?" 
+              "reasoning": "..." 
           } 
         }`;
-        
-        const result = await model.generateContent(prompt);
-        console.log('🎄🎄🎄 AI result', result);
-        
-        const text = result.response.text().replace(/```json|```/g, '').trim();
-        aiDecision = JSON.parse(text);
 
-    } catch (e) {
-        console.error("AI Failed", e);
-        // Ensure fallback structure matches new interface
-        aiDecision.market_sentiment = "Error in AI generation";
+        console.log('🤖 Asking Gemini...');
+        const result = await model.generateContent(promptText);
+        
+        const responseText = result.response.text();
+        // Clean markdown backticks just in case
+        const cleanText = responseText.replace(/```json|```/g, '').trim();
+        
+        aiDecision = JSON.parse(cleanText);
+        console.log('✅ AI Analysis Complete');
+
+      } catch (e: any) {
+        console.error("🐞 AI Failed Error:", e.message);
+        aiDecision.market_sentiment = "Error in AI generation: " + e.message;
+      }
     }
-}
+  }
 
-  const notify_me = superCandidates.length > 0 || aiDecision.call_suggestion.decision === 'BUY' || aiDecision.put_suggestion.decision === 'BUY';
+  const notify_me = superCandidates.length > 0 || aiDecision.call_suggestion?.decision === 'BUY' || aiDecision.put_suggestion?.decision === 'BUY';
 
   return { notify_me, ai_analysis: aiDecision, super_candidates: { calls: superCalls, puts: superPuts } };
 }
