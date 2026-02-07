@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { getSession } from '../auth';
 import { prisma } from '../prisma';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export const getUser = cache(async () => {
   const session = await getSession();
@@ -15,6 +16,10 @@ export const getUser = cache(async () => {
     where: { id: session.userId as string },
     select: userDashboardSelect,
   });
+
+  if (!user) {
+    redirect('/api/auth/clear-session');
+  }
 
   return user;
 });
