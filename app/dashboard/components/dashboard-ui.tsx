@@ -6,7 +6,9 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import {
   Moon, Sun, Filter, X, Eye,
-  TrendingUp, TrendingDown, Clock, CheckCircle
+  TrendingUp, TrendingDown, Clock, CheckCircle,
+  AlertTriangle,
+  Tag
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -90,100 +92,153 @@ export function FilterBar() {
   );
 }
 
-// --- 3. Details Modal Component ---
+
+// Helper for Tag Colors
+const getTagColor = (key: string, value: string) => {
+  if (key === 'risk_level') {
+    return value.includes('پر') ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
+  }
+  if (key === 'iv_status') {
+    return value.includes('ارزان') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
+  }
+  // Default (Leverage, etc)
+  return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+};
+
 export function DetailsModal({ isOpen, onClose, data }: { isOpen: boolean; onClose: () => void; data: any }) {
   if (!isOpen || !data) return null;
-  console.log('🎄🎄🎄', data);
+
+  const renderAdviceCard = (type: 'CALL' | 'PUT', advice: any) => {
+    if (!advice) return null;
+    const isCall = type === 'CALL';
+    const isBuy = advice.decision === 'BUY';
+    
+    // Theme colors based on type
+    const accentColor = isCall ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+    const borderColor = isCall ? 'border-emerald-200 dark:border-emerald-900' : 'border-rose-200 dark:border-rose-900';
+    const bgHeader = isCall ? 'bg-emerald-50 dark:bg-emerald-900/10' : 'bg-rose-50 dark:bg-rose-900/10';
+
+    return (
+      <div className={`border rounded-2xl overflow-hidden flex flex-col ${borderColor} dark:bg-gray-900/50`}>
+        {/* Card Header */}
+        <div className={`p-4 ${bgHeader} border-b ${borderColor} flex justify-between items-center`}>
+          <div className={`flex items-center gap-2 font-bold text-lg ${accentColor}`}>
+            {isCall ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+            {advice.title || `استراتژی ${type}`}
+          </div>
+          <span className={`px-3 py-1 rounded-full text-xs font-bold ${isBuy ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
+            {advice.decision}
+          </span>
+        </div>
+
+        {/* Card Body */}
+        <div className="p-4 space-y-4 flex-1">
+          {/* 1. Key Info Row */}
+          <div className="flex justify-between items-end border-b border-gray-100 dark:border-gray-800 pb-3">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">نماد منتخب</p>
+              <p className="text-xl font-black text-gray-900 dark:text-white font-mono">
+                {advice.symbol || '---'}
+              </p>
+            </div>
+            <div className="text-left">
+              <p className="text-xs text-gray-500 mb-1">قیمت ورود</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                {formatPrice(advice.entry_price)} <span className="text-xs font-normal text-gray-400">ریال</span>
+              </p>
+            </div>
+          </div>
+
+          {/* 2. Tags (Badges) */}
+          {advice.tags && (
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(advice.tags).map(([key, value]: any) => (
+                <span key={key} className={`px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 ${getTagColor(key, value)}`}>
+                  <Tag className="w-3 h-3" />
+                  {value}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 3. Strategy Context (Scenario) */}
+          {(advice.profit_scenario || advice.strategy_desc) && (
+            <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg text-xs space-y-2">
+              {advice.profit_scenario && (
+                <div className="flex gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-300 font-medium">
+                    سناریو سود: {advice.profit_scenario}
+                  </span>
+                </div>
+              )}
+              {advice.strategy_desc && (
+                <p className="text-gray-500 dark:text-gray-400 leading-5 text-justify opacity-90">
+                  {advice.strategy_desc}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 4. Specific AI Reasoning */}
+          {advice.reasoning && (
+             <div className="mt-2">
+                <p className="text-xs font-bold text-gray-400 mb-1">تحلیل نماد:</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-6 text-justify">
+                  {advice.reasoning}
+                </p>
+             </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" style={{ zIndex: 9999 }}>
+      {/* Container */}
+      <div className="bg-white dark:bg-gray-950 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800">
 
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">جزئیات تحلیل تکنیکال و هوش مصنوعی</h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-            <X className="w-5 h-5 text-gray-500" />
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-10">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+             <Info className="w-6 h-6 text-blue-600" />
+             جزئیات و تحلیل استراتژی
+          </h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+            <X className="w-6 h-6 text-gray-500" />
           </button>
         </div>
 
-        {/* Content (Scrollable) */}
+        {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-6 text-right" dir="rtl">
 
-          {/* AI Reasoning */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
-            <h4 className="text-blue-800 dark:text-blue-300 font-bold mb-2 flex items-center gap-2">
-              تحلیل هوش مصنوعی
-            </h4>
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-8 text-justify">
-              {data.aiReasoning}
-            </p>
-          </div>
-
-          {/* Raw Data (Candidates) - Showing Advice Objects */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* Call Details */}
-            <div className="border dark:border-gray-800 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400 font-bold">
-                <TrendingUp className="w-4 h-4" /> استراتژی Call
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">تصیمیم:</span>
-                  <span className="font-mono font-bold text-gray-900 dark:text-white">{data.callAdvice?.decision}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">نماد:</span>
-                  <span className="font-mono text-gray-900 dark:text-white">{data.callAdvice?.symbol || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">قیمت پیشنهادی:</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{formatPrice(data.callAdvice?.entry_price)}</span>
-                </div>
-              </div>
+          {/* 1. General Market Sentiment */}
+          {data.aiReasoning && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/50 shadow-sm">
+              <h4 className="text-blue-800 dark:text-blue-300 font-bold mb-3 flex items-center gap-2 text-lg">
+                🧠 تحلیل کلی بازار (Market Sentiment)
+              </h4>
+              <p className="text-sm md:text-base text-gray-700 dark:text-gray-200 leading-8 text-justify font-medium">
+                {data.aiReasoning}
+              </p>
             </div>
+          )}
 
-            {/* Put Details */}
-            <div className="border dark:border-gray-800 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3 text-rose-600 dark:text-rose-400 font-bold">
-                <TrendingDown className="w-4 h-4" /> استراتژی Put
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">تصیمیم:</span>
-                  <span className="font-mono font-bold text-gray-900 dark:text-white">{data.putAdvice?.decision}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">نماد:</span>
-                  <span className="font-mono text-gray-900 dark:text-white">{data.putAdvice?.symbol || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">قیمت پیشنهادی:</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{formatPrice(data.putAdvice?.entry_price)}</span>
-                </div>
-              </div>
-            </div>
+          {/* 2. Grid for Call & Put Strategies */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {renderAdviceCard('CALL', data.callAdvice)}
+            {renderAdviceCard('PUT', data.putAdvice)}
           </div>
-
-          {/* Candidates Log (If you add this field later to DB) */}
-          {/* 
-          <div className="mt-4">
-             <h4 className="font-bold text-gray-900 dark:text-white mb-2">لیست کاندیداها:</h4>
-             <pre className="bg-gray-100 dark:bg-black p-4 rounded-lg text-xs font-mono overflow-auto max-h-40" dir="ltr">
-               {JSON.stringify(data.candidates, null, 2)}
-             </pre>
-          </div> 
-          */}
-
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-end">
+        <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex justify-end gap-3 sticky bottom-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            className="px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl text-sm font-bold hover:opacity-90 transition-all shadow-lg hover:shadow-xl transform active:scale-95"
           >
-            بستن
+            بستن پنجره
           </button>
         </div>
       </div>
