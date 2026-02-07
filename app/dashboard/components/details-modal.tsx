@@ -198,7 +198,7 @@ export function DetailsModal({ isOpen, onClose, data }: { isOpen: boolean; onClo
 
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-10">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Info className="w-7 h-7 text-blue-600" />
             جزئیات و تحلیل استراتژی
           </h3>

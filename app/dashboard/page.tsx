@@ -1,7 +1,8 @@
 // app/dashboard/page.tsx
 import { prisma } from '@/lib/prisma';
-import { ThemeToggle, FilterBar, SignalRow } from './components/dashboard-ui';
+import { ThemeToggle, FilterBar, } from './components/dashboard-ui';
 import { startOfDay, startOfWeek, startOfMonth, subDays } from 'date-fns';
+import { SignalRow } from './components/signalRow';
 
 
 
@@ -47,7 +48,6 @@ export default async function DashboardPage(props: PageProps) {
     take: 100,
   });
 
-  console.log('🚀🚀', signals[0]);
 
 
   return (
@@ -78,10 +78,8 @@ export default async function DashboardPage(props: PageProps) {
               <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-gray-800">
                 <tr>
                   <th className="px-6 py-4 whitespace-nowrap">زمان</th>
-                  <th className="px-6 py-4 whitespace-nowrap">بازار</th>
-                  <th className="px-6 py-4 whitespace-nowrap">پیشنهاد Call (خرید)</th>
-                  <th className="px-6 py-4 whitespace-nowrap">پیشنهاد Put (فروش)</th>
-                  <th className="px-6 py-4 whitespace-nowrap text-center">اعلان</th>
+                  <th className="px-6 py-4 whitespace-nowrap">پیشنهاد Call</th>
+                  <th className="px-6 py-4 whitespace-nowrap">پیشنهاد Put</th>
                   <th className="px-6 py-4 whitespace-nowrap">عملیات</th>
                 </tr>
               </thead>
@@ -94,10 +92,7 @@ export default async function DashboardPage(props: PageProps) {
                     call={signal.callAdvice}
                     put={signal.putAdvice}
                     marketIsOpen={signal.marketStatus === 'OPEN'}
-                    formattedDate={new Intl.DateTimeFormat('fa-IR', {
-                      timeZone: 'Asia/Tehran',
-                      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
-                    }).format(signal.createdAt)}
+                    date={signal.createdAt}
                   />
                 ))}
 
