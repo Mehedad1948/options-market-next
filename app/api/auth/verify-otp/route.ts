@@ -30,8 +30,6 @@ export async function POST(request: Request) {
     // 3. Create Session (Cookie)
     await loginUser(otpRecord.userId, otpRecord.user.telegramId!);
 
-    updateTag('user')
-
     return NextResponse.json({ success: true });
 
   } catch (error) {
