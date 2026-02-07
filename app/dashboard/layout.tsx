@@ -5,22 +5,24 @@ import StreamListener from './stream-listener';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
 
-    const user = getUser()
+    const user = await getUser()
+
+
 
     if (!user) redirect('/login');
 
-  
+
 
     return (
         <section>
             {/* 1. The Real-Time Listener: Handles data stream & notifications */}
             <Suspense>
 
-            <StreamListener  />
+                <StreamListener />
             </Suspense>
 
             {/* 2. The Toast Provider: Renders the actual popup bubbles */}
-      
+
 
             {/* 3. Main Content */}
             <Suspense>

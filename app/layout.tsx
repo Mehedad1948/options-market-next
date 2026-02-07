@@ -105,9 +105,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const userPromise = getUser()
+  
   return (
-
-
     <html className='dark' lang="fa" dir="rtl" suppressHydrationWarning>
       <body
         className={`${vazirMatn.className} antialiased font-sans`}
