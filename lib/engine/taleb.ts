@@ -11,7 +11,7 @@ const API_URL = `https://BrsApi.ir/Api/Tsetmc/Option.php?key=${process.env.BRS_A
 const RISK_FREE_RATE = 0.3;
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Helper
 const cleanNum = (val: any) => (!val ? 0 : (typeof val === 'number' ? val : parseFloat(val.toString().replace(/,/g, ''))));
