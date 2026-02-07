@@ -8,7 +8,8 @@ import {
   Moon, Sun, Filter, X, Eye,
   TrendingUp, TrendingDown, Clock, CheckCircle,
   AlertTriangle,
-  Tag
+  Tag,
+  Info
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
