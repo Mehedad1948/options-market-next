@@ -134,8 +134,8 @@ export function DetailsModal({ isOpen, onClose, data }: { isOpen: boolean; onClo
                   <span className="font-mono text-gray-900 dark:text-white">{data.callAdvice?.symbol || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                   <span className="text-gray-500">سقف قیمت:</span>
-                   <span className="font-bold text-gray-900 dark:text-white">{formatPrice(data.callAdvice?.max_entry_price)}</span>
+                   <span className="text-gray-500">قیمت پیشنهادی:</span>
+                   <span className="font-bold text-gray-900 dark:text-white">{formatPrice(data.callAdvice?.entry_price)}</span>
                 </div>
               </div>
             </div>
@@ -155,8 +155,8 @@ export function DetailsModal({ isOpen, onClose, data }: { isOpen: boolean; onClo
                   <span className="font-mono text-gray-900 dark:text-white">{data.putAdvice?.symbol || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                   <span className="text-gray-500">سقف قیمت:</span>
-                   <span className="font-bold text-gray-900 dark:text-white">{formatPrice(data.putAdvice?.max_entry_price)}</span>
+                   <span className="text-gray-500">قیمت پیشنهادی:</span>
+                   <span className="font-bold text-gray-900 dark:text-white">{formatPrice(data.putAdvice?.entry_price)}</span>
                 </div>
               </div>
             </div>
@@ -274,10 +274,10 @@ function SignalBadge({ type, data }: { type: 'CALL' | 'PUT', data: any }) {
     )}>
       <div className="flex items-center gap-2 font-bold text-gray-800 dark:text-gray-100 text-sm">
         {isCall ? <TrendingUp className="w-4 h-4 text-emerald-500" /> : <TrendingDown className="w-4 h-4 text-rose-500" />}
-        <span dir="ltr" className="font-mono text-xs uppercase tracking-wide">{data.symbol}</span>
+        <span dir="ltr" className="text-sm uppercase tracking-wider">{data.symbol}</span>
       </div>
-      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 font-mono">
-        {formatPrice(data.max_entry_price)}
+      <div className="text-green-500 underline-offset-8 underline dark:text-gray-400 mt-1.5 font-bold">
+        {formatPrice(data.entry_price)}
       </div>
     </div>
   );

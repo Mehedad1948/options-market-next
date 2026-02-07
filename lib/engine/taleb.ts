@@ -2,7 +2,6 @@
 
 import iv from 'implied-volatility';
 import axios from 'axios';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { TalebResult } from '@/types/taleb';
 import { GoogleGenAI } from '@google/genai';
 
@@ -33,6 +32,9 @@ export async function runTalebStrategy(): Promise<TalebResult> {
       const strike = cleanNum(option.price_strike);
       const price = cleanNum(option.pc);
       const days = cleanNum(option.day_remain);
+      
+      // NEW: Capture Trading Volume
+      const volume = cleanNum(option.tvol);
 
       if (
         days <= 2 ||
@@ -71,6 +73,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
           moneyness: strike / spot - 1,
           type: typeStr,
           openInterest: cleanNum(option.interest_open),
+          volume: volume, // Added volume here
         },
       };
     })
@@ -79,6 +82,10 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   // 3. Filter
   const filtered = candidates.filter((c: any) => {
     const d = c.data;
+    
+    // NEW LOGIC: Filter out very low volume options (dead markets)
+    if (d.volume < 50) return false; 
+
     if (d.openInterest < 100) return false;
     if (d.type === 'call' && (d.moneyness < 0.05 || d.moneyness > 0.4))
       return false;
@@ -143,28 +150,30 @@ export async function runTalebStrategy(): Promise<TalebResult> {
       try {
         // INITIALIZE INSIDE THE FUNCTION TO ENSURE ENV VARS ARE LOADED
         const genAI = new GoogleGenAI({ apiKey });
-        // Use flash as it is stable and fast
-
+        
+        // NEW: Added Volume (Vol) to the format string
         const formatList = (list: any[]) =>
           list
             .map(
               (c) =>
-                `${c.symbol} | P:${c.data.price} | K:${c.data.strike} | Lev:${c.data.gearing.toFixed(1)} | IV:${(c.data.iv * 100).toFixed(0)}%`,
+                `${c.symbol} | Vol:${c.data.volume} | P:${c.data.price} | Lev:${c.data.gearing.toFixed(1)} | IV:${(c.data.iv * 100).toFixed(0)}%`,
             )
             .join('\n');
 
         const promptText = `
         Analyze Iranian Options Market.
-        Top 5 Calls: 
+        
+        Top 5 Calls (Sorted by leverage/risk): 
         ${formatList(topCalls)}
         
-        Top 5 Puts: 
+        Top 5 Puts (Sorted by leverage/risk): 
         ${formatList(topPuts)}
         
         Task:
         1. Analyze the general volatility (IV) and risk.
-        2. Select ONE best Call and ONE best Put based on Taleb Strategy (High Gearing, Cheap IV).
-        3. Explain strictly in Persian.
+        2. Pay attention to 'Vol' (Daily Volume). Avoid suggesting options with Volume < 100 unless the Leverage is excellent.
+        3. Select ONE best Call and ONE best Put based on Taleb Strategy (High Gearing, Cheap IV, Acceptable Liquidity).
+        4. Explain strictly in Persian.
 
         Output JSON format ONLY (no markdown code blocks):
         { 
@@ -218,7 +227,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
   return {
     notify_me,
-    ai_analysis: aiDecision,
-    super_candidates: { calls: superCalls, puts: superPuts },
+    ai_analysis: aiDecision,    super_candidates: { calls: superCalls, puts: superPuts },
   };
 }
+

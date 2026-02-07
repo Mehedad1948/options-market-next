@@ -14,7 +14,7 @@ interface PageProps {
 
 export default async function DashboardPage(props: PageProps) {
   // Await searchParams for Next.js 15/16
-  const params = await props.searchParams; 
+  const params = await props.searchParams;
   const period = params.period || 'all';
   const type = params.type || 'all';
 
@@ -35,8 +35,8 @@ export default async function DashboardPage(props: PageProps) {
     whereClause.putAdvice = { path: ['decision'], equals: 'BUY' };
   } else if (type === 'wait') {
     whereClause.AND = [
-       { callAdvice: { path: ['decision'], equals: 'WAIT' } },
-       { putAdvice: { path: ['decision'], equals: 'WAIT' } }
+      { callAdvice: { path: ['decision'], equals: 'WAIT' } },
+      { putAdvice: { path: ['decision'], equals: 'WAIT' } }
     ];
   }
 
@@ -47,10 +47,13 @@ export default async function DashboardPage(props: PageProps) {
     take: 100,
   });
 
+  console.log('🚀🚀', signals[0]);
+
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors" dir="rtl">
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
-        
+
         {/* Header & Controls */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -61,10 +64,10 @@ export default async function DashboardPage(props: PageProps) {
               مانیتورینگ هوشمند بازار اختیار معامله (Option)
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
-             <FilterBar />
-             {/* <ThemeToggle /> */}
+            <FilterBar />
+            {/* <ThemeToggle /> */}
           </div>
         </div>
 
@@ -82,11 +85,11 @@ export default async function DashboardPage(props: PageProps) {
                   <th className="px-6 py-4 whitespace-nowrap">عملیات</th>
                 </tr>
               </thead>
-              
+
               <tbody className="bg-white dark:bg-gray-900">
                 {signals.map((signal) => (
-                  <SignalRow 
-                    key={signal.id} 
+                  <SignalRow
+                    key={signal.id}
                     signal={signal}
                     call={signal.callAdvice}
                     put={signal.putAdvice}
