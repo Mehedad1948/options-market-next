@@ -20,7 +20,7 @@ jobs:
           echo "Triggering Market Check at ${{ secrets.YOUR_SITE_URL }}..."
           
           # Send GET request with Authorization header
-          curl -X GET "${{ secrets.YOUR_SITE_URL }}/api/check-market" \
+          curl -X GET "${{ secrets.YOUR_SITE_URL }}api/check-market" \
           -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
           --fail \
           --verbose
