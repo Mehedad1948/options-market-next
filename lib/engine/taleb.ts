@@ -191,11 +191,16 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
         console.log('🚀🚀🚀 Gemini Answer', result);
 
-        const responseText = result.response.text();
+        if (!result || !result?.text) {
+          aiDecision.market_sentiment = 'Error in AI generation: ' + 'No response from AI';
+          throw new Error('No response from AI');
+        }
+
+        const responseText = result?.text || 'No response from AI';
         console.log('🎄responseText🎄', responseText);
 
         // Clean markdown backticks just in case
-        const cleanText = responseText.replace(/```json|```/g, '').trim();
+        const cleanText = responseText?.replace(/```json|```/g, '').trim();
 
         aiDecision = JSON.parse(cleanText);
         console.log('✅ AI Analysis Complete');
