@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyAuth } from '@/lib/auth';
+import { verifySession } from '@/lib/auth';
 
 export async function GET() {
   try {
     // 1. Auth Check
-    const session = await verifyAuth();
+    const session = await verifySession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
