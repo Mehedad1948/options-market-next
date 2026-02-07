@@ -115,6 +115,8 @@ if (topCalls.length > 0 || topPuts.length > 0) {
         }`;
         
         const result = await model.generateContent(prompt);
+        console.log('🎄🎄🎄 AI result', result);
+        
         const text = result.response.text().replace(/```json|```/g, '').trim();
         aiDecision = JSON.parse(text);
 
