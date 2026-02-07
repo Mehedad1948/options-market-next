@@ -171,7 +171,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
         console.log('🤖 Asking Gemini...');
         const result = await genAI.models.generateContent({
-          model: 'gemini-2.0-flash', // Updated to latest model if available, or keep 1.5-flash
+          model: 'gemini-2.5-flash-light', // Updated to latest model if available, or keep 1.5-flash
           contents: promptText,
         });
 
