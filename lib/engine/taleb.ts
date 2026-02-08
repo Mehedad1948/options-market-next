@@ -14,13 +14,15 @@ const TALEB_DESCRIPTIONS = {
   CALL: {
     title: 'استراتژی طالب (Call)',
     profit_scenario: 'رشد شارپ و ناگهانی بازار (Explosive Upside)',
-    description: 'خرید اختیار خرید با اهرم بالا و نوسان ضمنی (IV) ارزان. مناسب برای شرط‌بندی روی جهش‌های بزرگ قیمت با ریسک محدود (حق بیمه کم).',
+    description:
+      'خرید اختیار خرید با اهرم بالا و نوسان ضمنی (IV) ارزان. مناسب برای شرط‌بندی روی جهش‌های بزرگ قیمت با ریسک محدود (حق بیمه کم).',
   },
   PUT: {
     title: 'استراتژی طالب (Put)',
     profit_scenario: 'ریزش سنگین یا سقوط بازار (Market Crash)',
-    description: 'خرید اختیار فروش به عنوان بیمه پرتفوی یا شرط‌بندی روی سقوط. هدف کسب سود نامتقارن از ترس بازار و افزایش IV است.',
-  }
+    description:
+      'خرید اختیار فروش به عنوان بیمه پرتفوی یا شرط‌بندی روی سقوط. هدف کسب سود نامتقارن از ترس بازار و افزایش IV است.',
+  },
 };
 
 // --- HELPERS ---
@@ -38,6 +40,8 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   const { data: rawData } = await axios.get(API_URL, { timeout: 10000 });
   if (!Array.isArray(rawData)) throw new Error('Invalid Data from Provider');
 
+  console.log('🚀🚀 Tehran Market data', rawData?.[0]);
+
   // 2. Process Math
   const candidates = rawData
     .map((option: any) => {
@@ -47,7 +51,13 @@ export async function runTalebStrategy(): Promise<TalebResult> {
       const days = cleanNum(option.day_remain);
       const volume = cleanNum(option.tvol);
 
-      if (days <= 2 || price <= 0 || spot <= 0 || cleanNum(option.interest_open) < 10) return null;
+      if (
+        days <= 2 ||
+        price <= 0 ||
+        spot <= 0 ||
+        cleanNum(option.interest_open) < 10
+      )
+        return null;
 
       const isCall = option.type?.toLowerCase().includes('call');
       const typeStr = isCall ? 'call' : 'put';
@@ -55,7 +65,14 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
       let impliedVol = 0;
       try {
-        impliedVol = iv.getImpliedVolatility(price, spot, strike, T, RISK_FREE_RATE, typeStr);
+        impliedVol = iv.getImpliedVolatility(
+          price,
+          spot,
+          strike,
+          T,
+          RISK_FREE_RATE,
+          typeStr,
+        );
       } catch (e) {
         impliedVol = 0;
       }
@@ -82,8 +99,10 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     const d = c.data;
     if (d.volume < 50) return false; // Basic liquidity check
     if (d.openInterest < 100) return false;
-    if (d.type === 'call' && (d.moneyness < 0.05 || d.moneyness > 0.4)) return false;
-    if (d.type === 'put' && (d.moneyness > -0.05 || d.moneyness < -0.4)) return false;
+    if (d.type === 'call' && (d.moneyness < 0.05 || d.moneyness > 0.4))
+      return false;
+    if (d.type === 'put' && (d.moneyness > -0.05 || d.moneyness < -0.4))
+      return false;
     if (d.price > 8000 || d.iv <= 0 || d.iv > 2.0) return false;
     return true;
   });
@@ -92,18 +111,44 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     b.data.gearing / (b.data.iv || 1) - a.data.gearing / (a.data.iv || 1);
 
   // Super Candidates & Lists
-  const superRaw = filtered.filter((c: any) => c.data.gearing > 10 && c.data.iv < 1.0);
-  const superCalls = superRaw.filter((c: any) => c.data.type === 'call').sort(sortFn).slice(0, 5);
-  const superPuts = superRaw.filter((c: any) => c.data.type === 'put').sort(sortFn).slice(0, 5);
+  const superRaw = filtered.filter(
+    (c: any) => c.data.gearing > 10 && c.data.iv < 1.0,
+  );
+  const superCalls = superRaw
+    .filter((c: any) => c.data.type === 'call')
+    .sort(sortFn)
+    .slice(0, 5);
+  const superPuts = superRaw
+    .filter((c: any) => c.data.type === 'put')
+    .sort(sortFn)
+    .slice(0, 5);
   const superCandidates = [...superCalls, ...superPuts];
 
-  const topCalls = filtered.filter((c: any) => c.data.type === 'call').sort(sortFn).slice(0, 5);
-  const topPuts = filtered.filter((c: any) => c.data.type === 'put').sort(sortFn).slice(0, 5);
+  const topCalls = filtered
+    .filter((c: any) => c.data.type === 'call')
+    .sort(sortFn)
+    .slice(0, 5);
+  const topPuts = filtered
+    .filter((c: any) => c.data.type === 'put')
+    .sort(sortFn)
+    .slice(0, 5);
 
   // Default State
   let aiDecision: any = {
-    call_suggestion: { decision: 'WAIT', symbol: null, max_entry_price: 0, reasoning: '', tags: {} },
-    put_suggestion: { decision: 'WAIT', symbol: null, max_entry_price: 0, reasoning: '', tags: {} },
+    call_suggestion: {
+      decision: 'WAIT',
+      symbol: null,
+      max_entry_price: 0,
+      reasoning: '',
+      tags: {},
+    },
+    put_suggestion: {
+      decision: 'WAIT',
+      symbol: null,
+      max_entry_price: 0,
+      reasoning: '',
+      tags: {},
+    },
     market_sentiment: 'No significant data for analysis.',
   };
 
@@ -122,7 +167,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
           list
             .map(
               (c) =>
-                `${c.symbol} | Vol:${c.data.volume} | P:${c.data.price} | Lev:${c.data.gearing.toFixed(1)} | IV:${(c.data.iv * 100).toFixed(0)}%`
+                `${c.symbol} | Vol:${c.data.volume} | P:${c.data.price} | Lev:${c.data.gearing.toFixed(1)} | IV:${(c.data.iv * 100).toFixed(0)}%`,
             )
             .join('\n');
 
@@ -181,33 +226,32 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
         // --- 5. MERGE DATA WITH HARDCODED INFO ---
         // We inject the static "Taleb" descriptions into the AI result here
-        
+
         aiDecision.market_sentiment = parsedAI.market_sentiment;
 
         // Process Call
         if (parsedAI.call_suggestion) {
-            aiDecision.call_suggestion = {
-                ...parsedAI.call_suggestion,
-                // Inject Hardcoded General Info
-                title: TALEB_DESCRIPTIONS.CALL.title,
-                profit_scenario: TALEB_DESCRIPTIONS.CALL.profit_scenario,
-                strategy_desc: TALEB_DESCRIPTIONS.CALL.description,
-            };
+          aiDecision.call_suggestion = {
+            ...parsedAI.call_suggestion,
+            // Inject Hardcoded General Info
+            title: TALEB_DESCRIPTIONS.CALL.title,
+            profit_scenario: TALEB_DESCRIPTIONS.CALL.profit_scenario,
+            strategy_desc: TALEB_DESCRIPTIONS.CALL.description,
+          };
         }
 
         // Process Put
         if (parsedAI.put_suggestion) {
-            aiDecision.put_suggestion = {
-                ...parsedAI.put_suggestion,
-                // Inject Hardcoded General Info
-                title: TALEB_DESCRIPTIONS.PUT.title,
-                profit_scenario: TALEB_DESCRIPTIONS.PUT.profit_scenario,
-                strategy_desc: TALEB_DESCRIPTIONS.PUT.description,
-            };
+          aiDecision.put_suggestion = {
+            ...parsedAI.put_suggestion,
+            // Inject Hardcoded General Info
+            title: TALEB_DESCRIPTIONS.PUT.title,
+            profit_scenario: TALEB_DESCRIPTIONS.PUT.profit_scenario,
+            strategy_desc: TALEB_DESCRIPTIONS.PUT.description,
+          };
         }
 
         console.log('✅ AI Analysis Complete & Structured');
-
       } catch (e: any) {
         console.error('🐞 AI Failed Error:', e.message);
         aiDecision.market_sentiment = 'Error in AI generation';
