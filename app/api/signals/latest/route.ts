@@ -6,6 +6,9 @@ export async function GET() {
   try {
     // 1. Auth Check
     const session = await verifySession();
+
+    console.log('✅✅✅ Payload', session);
+
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -29,13 +32,16 @@ export async function GET() {
     });
 
     // 3. Transform Data (Calculate Count & Remove Heavy Array)
-    const signals = rawSignals.map(signal => {
+    const signals = rawSignals.map((signal) => {
       let count = 0;
-      
+
       // Safely determine array length regardless of Prisma JSON type
       if (Array.isArray(signal.candidates)) {
         count = signal.candidates.length;
-      } else if (typeof signal.candidates === 'object' && signal.candidates !== null) {
+      } else if (
+        typeof signal.candidates === 'object' &&
+        signal.candidates !== null
+      ) {
         // Handle case where it might be an object-wrapped list
         count = Object.keys(signal.candidates).length;
       }
@@ -56,7 +62,7 @@ export async function GET() {
     console.error('Error fetching Taleb signals:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
