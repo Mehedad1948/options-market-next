@@ -46,27 +46,29 @@ export async function POST(req: Request) {
           messageText = `سلام ${firstName}، خوشحالیم که دوباره شما را می‌بینیم! 👋`;
         }
 
+        // Send menu with the correct button text
         await sendMainMenu(chatId, messageText);
       }
 
       // =========================================================
-      // 2. HANDLE DASHBOARD ACCESS (Smart Check)
+      // 2. HANDLE DASHBOARD ACCESS (Check Phone Logic)
       // =========================================================
-      else if (text === '🔐 فعال‌سازی داشبورد' || text === '/login') {
+      // CHANGED: Listen for "دسترسی به داشبورد" instead of "فعال‌سازی"
+      else if (text === '🔐 دسترسی به داشبورد' || text === '/login') {
         const user = await prisma.user.findUnique({
           where: { telegramId: chatId },
         });
 
         if (user?.phoneNumber) {
-          // User already has phone -> Send Link directly
+          // SCENARIO 1: User HAS Phone -> Send Link directly
           const link = `${APP_URL}/dashboard`;
           await sendMessage(
             chatId,
-            `✅ حساب شما قبلاً فعال شده است.\n\n🔗 [ورود به داشبورد](${link})`,
+            `✅ شما به داشبورد دسترسی دارید.\n\n🔗 [ورود به داشبورد](${link})`,
             'Markdown',
           );
         } else {
-          // User needs to share phone -> Request Contact
+          // SCENARIO 2: User NO Phone -> Request Contact
           await requestContact(chatId);
         }
       }
@@ -106,7 +108,6 @@ export async function POST(req: Request) {
       // 4. HANDLE MARKET STATUS (Fetch from TalebSignal)
       // =========================================================
       else if (text === '📊 وضعیت بازار') {
-        // Fetch the very latest signal
         const latestSignal = await prisma.talebSignal.findFirst({
           orderBy: { createdAt: 'desc' },
         });
@@ -117,21 +118,17 @@ export async function POST(req: Request) {
             '⏳ هنوز داده‌ای برای تحلیل بازار ثبت نشده است.',
           );
         } else {
-          // Convert DB Json to typed objects (safely)
           const callAdvice = latestSignal.callAdvice as any;
           const putAdvice = latestSignal.putAdvice as any;
 
-          // Generate friendly date string
           const dateString = getFriendlyPersianDate(latestSignal.createdAt);
           const timeString = getPersianTime(latestSignal.createdAt);
 
           const dateHeader = `📅 <b>وضعیت بازار</b>\n🕐 ${dateString} ساعت ${timeString}\n──────────────────\n`;
 
-          // Generate body
           const analysisBody = generateTelegramMessage(callAdvice, putAdvice);
 
           if (!analysisBody) {
-            // If function returns empty string, it means no BUY signals
             await sendMessage(
               chatId,
               `${dateHeader}\nفعلاً سیگنال خرید قطعی (BUY) مشاهده نمی‌شود.\nوضعیت: <b>WAIT</b>`,
@@ -149,7 +146,6 @@ export async function POST(req: Request) {
       else if (contact) {
         console.log('📱 Received Contact:', contact.phone_number);
 
-        // Normalize phone
         let phone = contact.phone_number.replace(/\D/g, '');
         if (phone.startsWith('98')) phone = '+' + phone;
         else if (phone.startsWith('0')) phone = '+98' + phone.substring(1);
@@ -187,7 +183,8 @@ async function sendMainMenu(chatId: string, text: string) {
 
   const keyboard = {
     keyboard: [
-      [{ text: '🔐 فعال‌سازی داشبورد' }, { text: '💎 وضعیت اشتراک' }],
+      // CHANGED: Button text is now "دسترسی به داشبورد"
+      [{ text: '🔐 دسترسی به داشبورد' }, { text: '💎 وضعیت اشتراک' }],
       [{ text: '📊 وضعیت بازار' }],
     ],
     resize_keyboard: true,
@@ -238,13 +235,13 @@ async function requestContact(chatId: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chat_id: chatId,
-      text: '⚠️ برای ایجاد حساب کاربری و ورود به داشبورد، نیاز به شماره موبایل شما داریم.\n\nلطفا روی دکمه زیر کلیک کنید:',
+      text: '⚠️ برای ورود به داشبورد، نیاز به تایید شماره موبایل شما داریم.\n\nلطفا روی دکمه زیر کلیک کنید:',
       reply_markup: keyboard,
     }),
   });
 }
 
-// 4. Date Formatters (Jalali)
+// 4. Date Formatters
 function getPersianDate(date: Date) {
   return new Intl.DateTimeFormat('fa-IR', {
     year: 'numeric',
@@ -278,7 +275,7 @@ const formatNumber = (num: number) => {
   return num ? Number(num).toLocaleString('fa-IR') : '۰';
 };
 
-// 6. Signal Message Generator (Refactored for TalebSignal)
+// 6. Signal Message Generator
 const generateTelegramMessage = (call: any, put: any): string => {
   const dashboardUrl = `${APP_URL}/dashboard`;
 
@@ -294,7 +291,6 @@ const generateTelegramMessage = (call: any, put: any): string => {
   message += `-----------------------------\n`;
 
   if (isCallBuy) {
-    // If symbol exists in advice use it, otherwise generic fallback
     const symbolDisplay = call.symbol || 'اختیار خرید';
     message += `<b>🚀 سیگنال خرید (Call):</b> <code>${symbolDisplay}</code>\n`;
     message += `<b>قیمت خرید:</b> ${formatNumber(call.entry_price)} ریال\n`;
@@ -308,6 +304,7 @@ const generateTelegramMessage = (call: any, put: any): string => {
     message += `<i>${put.reasoning}</i>\n\n`;
   }
 
+  // CORRECTED: Fixed the HTML tag here
   message += `<b>🔗 جزئیات کامل:</b> <a href="${dashboardUrl}">مشاهده داشبورد</a>`;
 
   return message;
