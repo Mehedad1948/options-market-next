@@ -5,6 +5,7 @@ import { NotificationService } from '@/lib/services/telegram'; // Ensure this se
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma'; // FIXED: Use singleton to prevent connection leaks
 import { getTehranMarketStatus } from '@/lib/services/tehranMarketStatus';
+import { generateTelegramMessage } from '@/lib/services/generateTelegramMessage';
 
 export async function GET(request: Request) {
   // OPTIONAL: Add a secret key check so only GitHub Actions can call this
@@ -81,32 +82,7 @@ export async function GET(request: Request) {
         result.super_candidates.puts.length;
 
       // Construct Telegram Message (HTML Format)
-      let msg = `<b>🦅 Taleb System Alert</b>\n\n`;
-      msg += `<b>💎 Candidates:</b> ${superCount} found\n`;
-      msg += `-----------------------------\n`;
-
-      // Call Section
-      if (call_suggestion.decision === 'BUY') {
-        msg += `<b>🚀 CALL SIGNAL:</b> <code>${call_suggestion.symbol}</code>\n`;
-        msg += `<b>Buy Limit:</b> ${call_suggestion.entry_price} Rials\n`;
-        msg += `<i>${call_suggestion.reasoning}</i>\n\n`;
-      }
-
-      // Put Section
-      if (put_suggestion.decision === 'BUY') {
-        msg += `<b>🩸 PUT SIGNAL:</b> <code>${put_suggestion.symbol}</code>\n`;
-        msg += `<b>Buy Limit:</b> ${put_suggestion.entry_price} Rials\n`;
-        msg += `<i>${put_suggestion.reasoning}</i>\n`;
-      }
-
-      // If only Super candidates but AI said WAIT
-      if (
-        superCount > 0 &&
-        call_suggestion.decision === 'WAIT' &&
-        put_suggestion.decision === 'WAIT'
-      ) {
-        msg += `AI suggests waiting, but mathematical super candidates exist. Check dashboard.`;
-      }
+      const msg = generateTelegramMessage(result);
 
       // A. Get active subscribers from DB
       const subscribers = await prisma.user.findMany({
