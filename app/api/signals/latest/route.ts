@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifySession } from '@/lib/auth';
+import { getSession, verifySession } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
-    // 1. Auth Check
-    const session = await verifySession();
+    const session = await getSession();
 
     console.log('✅✅✅ Payload', session);
 

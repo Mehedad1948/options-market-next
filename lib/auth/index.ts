@@ -40,9 +40,8 @@ export async function getSession() {
 
 // THIS FUNCTION IS CRITICAL FOR MIDDLEWARE
 export async function verifySession(token: string | undefined = '') {
-  const session = token || (await cookies()).get('session')?.value;
   try {
-    const { payload } = await jwtVerify(session, key, {
+    const { payload } = await jwtVerify(token, key, {
       algorithms: ['HS256'],
     });
     return payload;
