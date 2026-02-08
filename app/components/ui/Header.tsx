@@ -5,6 +5,7 @@ import { BarChart3 } from "lucide-react";
 import { DashboardLink } from './dashboard-link';
 import { Suspense } from 'react';
 import { ThemeToggle } from './ThemeToggle';
+import Logo from './Logo';
 
 export default function Header() {
   return (
@@ -14,11 +15,9 @@ export default function Header() {
         {/* RIGHT SIDE: Logo & Title */}
         <div className='flex items-center gap-4 ml-2'>
           <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity">
-            <div className="bg-blue-600 p-1.5 rounded-lg text-white shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform">
-              <BarChart3 className="w-6 h-6" />
-            </div>
+             <Logo className='w-6'  />
             <span className="text-lg md:block hidden font-black tracking-tight text-gray-900 dark:text-white">
-              آپشن‌<span className="text-ambrt-600">یار</span>
+              آپشن‌<span className="text-amber-600">یار</span>
             </span>
           </Link>
 
