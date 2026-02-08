@@ -155,6 +155,7 @@ export async function GET(request: Request) {
     });
   } catch (error: any) {
     console.error('🐞 Cron Job Error: ', error);
+    console.error('🐞 Cron Job Error Request: ', error?.request);
 
     // Fallback: Try to notify only Admin about the crash
     if (process.env.ADMIN_TELEGRAM_CHAT_ID) {
