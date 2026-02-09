@@ -72,14 +72,14 @@ export async function GET(request: Request) {
           : 0,
     });
 
+    const nothingToSuggest =
+      result.ai_analysis.put_suggestion?.decision === 'WAIT' &&
+      result.ai_analysis.call_suggestion?.decision === 'WAIT';
+
     // ============================================================
     // 4. TELEGRAM NOTIFICATIONS (Only if notify_me is true)
     // ============================================================
-    if (result.notify_me) {
-      const { call_suggestion, put_suggestion } = result.ai_analysis;
-      const superCount =
-        result.super_candidates.calls.length +
-        result.super_candidates.puts.length;
+    if (result.notify_me && !nothingToSuggest) {
 
       // Construct Telegram Message (HTML Format)
       const msg = generateTelegramMessage(result);
