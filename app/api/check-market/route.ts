@@ -23,55 +23,6 @@ export async function GET(request: Request) {
 
     const currentStatus = getTehranMarketStatus();
 
-    // 2. Save to PostgreSQL
-    const savedSignal = await prisma.talebSignal.create({
-      data: {
-        marketStatus: currentStatus, // Keep your existing status logic
-
-        // 1. The General Analysis goes to the main text column
-        aiReasoning: result.ai_analysis.market_sentiment,
-
-        // 2. The Specific Advice goes into the JSON columns
-        // The JSON now contains the 'reasoning' for that specific symbol
-        callAdvice: (result.ai_analysis.call_suggestion ??
-          null) as unknown as Prisma.InputJsonValue,
-        putAdvice: (result.ai_analysis.put_suggestion ??
-          null) as unknown as Prisma.InputJsonValue,
-
-        // 3. Candidates logic
-        candidates: candidatesPayload as unknown as Prisma.InputJsonValue,
-        sentNotification: result.notify_me,
-      },
-    });
-
-    // ============================================================
-    // 3. BROADCAST TO WEB DASHBOARD (SSE)
-    // ============================================================
-    // We broadcast this event to ALL connected clients.
-    // The client hook will decide whether to show a Toast based on the 'notify' flag and user settings.
-    await NotificationService.broadcastEvent('TALEB_SIGNAL', {
-      id: savedSignal.id,
-      timestamp: new Date().toISOString(),
-      notify: result.notify_me, // Vital: Client uses this to trigger sound/popup
-      // Summary data for the toast
-      symbol:
-        result.ai_analysis.call_suggestion?.decision === 'BUY'
-          ? result.ai_analysis.call_suggestion?.symbol
-          : result.ai_analysis.put_suggestion?.decision === 'BUY'
-            ? result.ai_analysis.put_suggestion?.symbol
-            : 'بروزرسانی بازار',
-      type:
-        result.ai_analysis.call_suggestion?.decision === 'BUY'
-          ? 'CALL'
-          : result.ai_analysis.put_suggestion?.decision === 'BUY'
-            ? 'PUT'
-            : 'WAIT',
-      price:
-        result.ai_analysis.call_suggestion?.decision === 'BUY'
-          ? result.ai_analysis.call_suggestion?.entry_price
-          : 0,
-    });
-
     const nothingToSuggest =
       result.ai_analysis.put_suggestion?.decision === 'WAIT' &&
       result.ai_analysis.call_suggestion?.decision === 'WAIT';
@@ -80,6 +31,48 @@ export async function GET(request: Request) {
     // 4. TELEGRAM NOTIFICATIONS (Only if notify_me is true)
     // ============================================================
     if (result.notify_me && !nothingToSuggest) {
+      const savedSignal = await prisma.talebSignal.create({
+        data: {
+          marketStatus: currentStatus, // Keep your existing status logic
+
+          // 1. The General Analysis goes to the main text column
+          aiReasoning: result.ai_analysis.market_sentiment,
+
+          // 2. The Specific Advice goes into the JSON columns
+          // The JSON now contains the 'reasoning' for that specific symbol
+          callAdvice: (result.ai_analysis.call_suggestion ??
+            null) as unknown as Prisma.InputJsonValue,
+          putAdvice: (result.ai_analysis.put_suggestion ??
+            null) as unknown as Prisma.InputJsonValue,
+
+          // 3. Candidates logic
+          candidates: candidatesPayload as unknown as Prisma.InputJsonValue,
+          sentNotification: result.notify_me,
+        },
+      });
+
+      await NotificationService.broadcastEvent('TALEB_SIGNAL', {
+        id: savedSignal.id,
+        timestamp: new Date().toISOString(),
+        notify: result.notify_me, // Vital: Client uses this to trigger sound/popup
+        // Summary data for the toast
+        symbol:
+          result.ai_analysis.call_suggestion?.decision === 'BUY'
+            ? result.ai_analysis.call_suggestion?.symbol
+            : result.ai_analysis.put_suggestion?.decision === 'BUY'
+              ? result.ai_analysis.put_suggestion?.symbol
+              : 'بروزرسانی بازار',
+        type:
+          result.ai_analysis.call_suggestion?.decision === 'BUY'
+            ? 'CALL'
+            : result.ai_analysis.put_suggestion?.decision === 'BUY'
+              ? 'PUT'
+              : 'WAIT',
+        price:
+          result.ai_analysis.call_suggestion?.decision === 'BUY'
+            ? result.ai_analysis.call_suggestion?.entry_price
+            : 0,
+      });
 
       // Construct Telegram Message (HTML Format)
       const msg = generateTelegramMessage(result);
