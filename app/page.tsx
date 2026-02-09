@@ -12,12 +12,13 @@ import {
   Zap
 } from "lucide-react";
 import Image from 'next/image';
+import { WhatWeDoSection } from './components/Introduction';
 
 export default async function HomePage() {
   'use cache'
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors relative selection:bg-amber-500 selection:text-white">
-
+    <div className="flex  flex-col min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors relative selection:bg-amber-500 selection:text-white">
+      
       {/* --- GLOBAL GRID BACKGROUND --- */}
       {/* This covers the whole page but sits behind everything (z-0) */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none z-0" />
@@ -209,6 +210,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <WhatWeDoSection />
 
       {/* --- PRICING / CTA --- */}
       {/* Changed Background from Blue to Dark Slate to match "Black Swan" theme */}
