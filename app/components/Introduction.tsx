@@ -1,6 +1,4 @@
-import React from 'react';
-import { ShieldCheck, BarChart, Zap, Filter, Calculator, BrainCircuit, ArrowLeft } from 'lucide-react';
-import LightRays from './ui/Rays';
+import { BarChart, BrainCircuit, Calculator, Filter, ShieldCheck, Zap } from 'lucide-react';
 
 // --- Reusable Component: Strategy Card (The "Illustrations") ---
 const StrategyCard = ({
