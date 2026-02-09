@@ -53,7 +53,6 @@ const ProcessStep = ({ number, title, desc, icon: Icon }: { number: string, titl
 export const WhatWeDoSection = () => {
     return (
         <section className="relative py-24 lg:py-32  overflow-hidden dir-rtl">
-            <LightRays  />
             {/* Background Decor */}
             <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
                 <div className="absolute top-0 left-0 w-96 h-96 bg-amber-500 rounded-full blur-3xl translate-x-[-50%] translate-y-[-50%]" />
