@@ -2,14 +2,18 @@
 
 import iv from 'implied-volatility';
 import axios from 'axios';
-import { TalebResult } from '@/types/taleb'; // Ensure this type is updated or use 'any' temporarily
+import { TalebResult } from '@/types/taleb'; 
 import { GoogleGenAI } from '@google/genai';
 
 // --- CONFIGURATION ---
 const API_URL = `https://BrsApi.ir/Api/Tsetmc/Option.php?key=${process.env.BRS_API_KEY || 'FreeWsXDnKpRTg7dfqRMzRlYSYeA83FN'}`;
 const RISK_FREE_RATE = 0.3;
 
-// --- STATIC TEXTS (Hardcoded for consistency) ---
+// 🟢 NEW: Define Minimum Volume Threshold
+// 1000 is a safe baseline. Anything lower usually has a huge gap between Buy/Sell prices.
+const MIN_VOLUME_THRESHOLD = 1000; 
+
+// --- STATIC TEXTS ---
 const TALEB_DESCRIPTIONS = {
   CALL: {
     title: 'استراتژی طالب (Call)',
@@ -40,7 +44,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   const { data: rawData } = await axios.get(API_URL, { timeout: 10000 });
   if (!Array.isArray(rawData)) throw new Error('Invalid Data from Provider');
 
-  console.log('🚀🚀 Tehran Market data', rawData?.[0]);
+  console.log('🚀🚀 Tehran Market data length:', rawData.length);
 
   // 2. Process Math
   const candidates = rawData
@@ -51,6 +55,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
       const days = cleanNum(option.day_remain);
       const volume = cleanNum(option.tvol);
 
+      // Basic sanity check before heavy math
       if (
         days <= 2 ||
         price <= 0 ||
@@ -97,13 +102,22 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   // 3. Filter
   const filtered = candidates.filter((c: any) => {
     const d = c.data;
-    if (d.volume < 50) return false; // Basic liquidity check
+
+    // 🟢 UPDATED: Strict Volume Check
+    // If volume is < 1000, the price is likely not real or the spread is too high.
+    if (d.volume < MIN_VOLUME_THRESHOLD) return false; 
+
+    // Open Interest check (keep or increase to 500)
     if (d.openInterest < 100) return false;
+
     if (d.type === 'call' && (d.moneyness < 0.05 || d.moneyness > 0.4))
       return false;
     if (d.type === 'put' && (d.moneyness > -0.05 || d.moneyness < -0.4))
       return false;
+    
+    // Price cap and IV sane range
     if (d.price > 8000 || d.iv <= 0 || d.iv > 2.0) return false;
+    
     return true;
   });
 
@@ -114,27 +128,32 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   const superRaw = filtered.filter(
     (c: any) => c.data.gearing > 10 && c.data.iv < 1.0,
   );
+  
   const superCalls = superRaw
     .filter((c: any) => c.data.type === 'call')
     .sort(sortFn)
     .slice(0, 5);
+    
   const superPuts = superRaw
     .filter((c: any) => c.data.type === 'put')
     .sort(sortFn)
     .slice(0, 5);
+    
   const superCandidates = [...superCalls, ...superPuts];
 
+  // Get Top list for AI analysis
   const topCalls = filtered
     .filter((c: any) => c.data.type === 'call')
     .sort(sortFn)
     .slice(0, 5);
+    
   const topPuts = filtered
     .filter((c: any) => c.data.type === 'put')
     .sort(sortFn)
     .slice(0, 5);
 
   // Default State
-  let aiDecision: any = {
+  const aiDecision: any = {
     call_suggestion: {
       decision: 'WAIT',
       symbol: null,
@@ -162,6 +181,8 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     } else {
       try {
         const genAI = new GoogleGenAI({ apiKey });
+        // Use flash-lite or flash depending on your access/tier
+        const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite-preview-02-05'; 
 
         const formatList = (list: any[]) =>
           list
@@ -171,10 +192,11 @@ export async function runTalebStrategy(): Promise<TalebResult> {
             )
             .join('\n');
 
-        // --- OPTIMIZED PROMPT ---
         const promptText = `
         Act as an Expert Options Trader (Nassim Taleb Strategy).
         Analyze Iranian Options Market Data below.
+        
+        **Note: Candidates have already been filtered for minimum volume (> ${MIN_VOLUME_THRESHOLD}).**
         
         Top Calls (High Leverage/Low IV): 
         ${formatList(topCalls)}
@@ -183,40 +205,32 @@ export async function runTalebStrategy(): Promise<TalebResult> {
         ${formatList(topPuts)}
         
         Task:
-        1. Select ONE best Call and ONE best Put.
-        2. **STRICT JSON OUTPUT ONLY**. Do not write intro/outro text.
-        3. Fill the 'tags' object precisely based on data (e.g., leverage > 10 is 'بسیار بالا').
+        1. Select ONE best Call and ONE best Put based on Risk/Reward.
+        2. **STRICT JSON OUTPUT ONLY**.
+        3. Fill 'tags' based on data.
         
         Output Schema:
         { 
-          "market_sentiment": "Short Persian summary of market volatility...",
+          "market_sentiment": "Short Persian summary...",
           "call_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
               "entry_price": 0, 
-              "reasoning": "Short Persian explanation why...",
-              "tags": {
-                 "leverage_tag": "متوسط" | "بالا" | "بسیار بالا",
-                 "iv_status": "ارزان" | "گران" | "منصفانه",
-                 "risk_level": "کم ریسک" | "پر ریسک"
-              }
+              "reasoning": "Persian explanation...",
+              "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
           }, 
           "put_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
               "entry_price": 0, 
-              "reasoning": "Short Persian explanation...",
-              "tags": {
-                 "leverage_tag": "متوسط" | "بالا" | "بسیار بالا",
-                 "iv_status": "ارزان" | "گران" | "منصفانه",
-                 "risk_level": "کم ریسک" | "پر ریسک"
-              }
+              "reasoning": "Persian explanation...",
+              "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
           } 
         }`;
 
         console.log('🤖 Asking Gemini...');
         const result = await genAI.models.generateContent({
-          model: process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite', // Updated to latest model if available, or keep 1.5-flash
+          model: modelName,
           contents: promptText,
         });
 
@@ -224,34 +238,27 @@ export async function runTalebStrategy(): Promise<TalebResult> {
         const cleanText = responseText.replace(/```json|```/g, '').trim();
         const parsedAI = JSON.parse(cleanText);
 
-        // --- 5. MERGE DATA WITH HARDCODED INFO ---
-        // We inject the static "Taleb" descriptions into the AI result here
-
         aiDecision.market_sentiment = parsedAI.market_sentiment;
 
-        // Process Call
         if (parsedAI.call_suggestion) {
           aiDecision.call_suggestion = {
             ...parsedAI.call_suggestion,
-            // Inject Hardcoded General Info
             title: TALEB_DESCRIPTIONS.CALL.title,
             profit_scenario: TALEB_DESCRIPTIONS.CALL.profit_scenario,
             strategy_desc: TALEB_DESCRIPTIONS.CALL.description,
           };
         }
 
-        // Process Put
         if (parsedAI.put_suggestion) {
           aiDecision.put_suggestion = {
             ...parsedAI.put_suggestion,
-            // Inject Hardcoded General Info
             title: TALEB_DESCRIPTIONS.PUT.title,
             profit_scenario: TALEB_DESCRIPTIONS.PUT.profit_scenario,
             strategy_desc: TALEB_DESCRIPTIONS.PUT.description,
           };
         }
 
-        console.log('✅ AI Analysis Complete & Structured');
+        console.log('✅ AI Analysis Complete');
       } catch (e: any) {
         console.error('🐞 AI Failed Error:', e.message);
         aiDecision.market_sentiment = 'Error in AI generation';
@@ -267,6 +274,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   return {
     notify_me,
     ai_analysis: aiDecision,
-    super_candidates: { calls: superCalls, puts: superPuts },
+  super_candidates: { calls: superCalls, puts: superPuts },
   };
 }
+

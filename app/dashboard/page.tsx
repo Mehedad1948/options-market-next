@@ -14,7 +14,7 @@ interface PageProps {
 }
 
 export default async function DashboardPage(props: PageProps) {
-  const params = await props.searchParams;
+   const params = await props.searchParams;
   
   // 1. Parse Pagination Params
   const page = Number(params.page) || 1;
@@ -33,15 +33,26 @@ export default async function DashboardPage(props: PageProps) {
   else if (period === 'week') whereClause.createdAt = { gte: startOfWeek(now) };
   else if (period === 'month') whereClause.createdAt = { gte: startOfMonth(now) };
 
+  // --- TYPE FILTERING LOGIC ---
   if (type === 'buy_call') {
     whereClause.callAdvice = { path: ['decision'], equals: 'BUY' };
   } else if (type === 'buy_put') {
     whereClause.putAdvice = { path: ['decision'], equals: 'BUY' };
   } else if (type === 'wait') {
+    // If user explicitly asks for "wait", show ONLY double waits
     whereClause.AND = [
       { callAdvice: { path: ['decision'], equals: 'WAIT' } },
       { putAdvice: { path: ['decision'], equals: 'WAIT' } },
     ];
+  } else {
+    // DEFAULT (type == 'all'): 
+    // Exclude rows where BOTH are 'WAIT'
+    whereClause.NOT = {
+      AND: [
+        { callAdvice: { path: ['decision'], equals: 'WAIT' } },
+        { putAdvice: { path: ['decision'], equals: 'WAIT' } },
+      ]
+    };
   }
 
   // 3. Fetch Data & Count (Parallel for performance)
@@ -56,7 +67,6 @@ export default async function DashboardPage(props: PageProps) {
       where: whereClause,
     }),
   ]);
-
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
