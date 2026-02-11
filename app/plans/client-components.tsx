@@ -24,54 +24,28 @@ export function UserSubscriptionGauge() {
   const daysLeft = getDaysRemaining(user.subscriptionExpiresAt);
 
   return (
-    <div className="mb-16 bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
-
+    <div className='mb-16 bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700'>
       {/* Text Info */}
-      <div className="z-10 text-center md:text-right">
-        <h2 className="text-2xl font-bold mb-2">
-          سلام {user.firstName || "همراه عزیز"}،
+      <div className='z-10 text-center md:text-right'>
+        <h2 className='text-2xl font-bold mb-2'>
+          سلام {user.firstName || 'همراه عزیز'}،
         </h2>
-        <p className="text-slate-500 dark:text-slate-400">
+        <p className='text-slate-500 dark:text-slate-400'>
           {daysLeft > 0
-            ? "اشتراک شما فعال است. از شکار فرصت‌ها لذت ببرید."
-            : "اشتراک شما به پایان رسیده است. برای ادامه تمدید کنید."}
+            ? 'اشتراک شما فعال است. از شکار فرصت‌ها لذت ببرید.'
+            : 'اشتراک شما به پایان رسیده است. برای ادامه تمدید کنید.'}
         </p>
       </div>
 
       {/* CURVED GAUGE INDICATOR */}
-      <div className="relative w-48 h-24 flex justify-center items-end">
-        <svg className="w-full h-full overflow-visible" viewBox="0 0 200 100">
-          <path
-            d="M 20 100 A 80 80 0 0 1 180 100"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="12"
-            strokeLinecap="round"
-            className="text-slate-200 dark:text-slate-800"
-          />
-          <path
-            d="M 20 100 A 80 80 0 0 1 180 100"
-            fill="none"
-            stroke="url(#gradientGauge)"
-            strokeWidth="12"
-            strokeLinecap="round"
-            strokeDasharray="251.2"
-            strokeDashoffset={251.2 - (251.2 * Math.min(daysLeft, 30) / 30)}
-            className="transition-all duration-1000 ease-out"
-          />
-          <defs>
-            <linearGradient id="gradientGauge" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#d97706" />
-            </linearGradient>
-          </defs>
-        </svg>
-
-        <div className="absolute bottom-0 text-center">
-          <span className="text-4xl font-bold text-slate-800 dark:text-white block -mb-1">
-            {daysLeft}
+      <div className='relative w-48 h-24 flex justify-center items-end'>
+        <div className='absolute bottom-0 text-center'>
+          <span className='text-4xl font-bold text-slate-800 dark:text-white block -mb-1'>
+            {daysLeft.toLocaleString('fa-IR')}
           </span>
-          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">روز باقی‌مانده</span>
+          <span className='text-xs text-slate-500 font-bold uppercase tracking-wider'>
+            روز باقی‌مانده
+          </span>
         </div>
       </div>
     </div>
@@ -82,17 +56,21 @@ export function PromotionalHeader() {
   const user = useUser();
 
   return (
-    <div className="text-center mb-12">
-      <h1 className="text-4xl font-bold mb-4 text-slate-900 dark:text-white">
-        سرمایه‌گذاری روی <span className="text-amber-500">بینش</span>
+    <div className='text-center mb-12'>
+      <h1 className='text-4xl font-bold mb-4 text-slate-900 dark:text-white'>
+        سرمایه‌گذاری روی <span className='text-amber-500'>بینش</span>
       </h1>
 
       {/* Show only if NOT logged in */}
       {!user && (
-        <div className="inline-flex items-center gap-3 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 px-6 py-3 rounded-full mt-4 animate-pulse-slow">
-          <Gift className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-          <span className="text-amber-800 dark:text-amber-200 font-medium">
-            تازه واردید؟ <span className="font-bold underline decoration-amber-500/50 underline-offset-4">۱۴ روز اشتراک رایگان</span> بعد از ثبت نام اولیه
+        <div className='inline-flex items-center gap-3 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 px-6 py-3 rounded-full mt-4 animate-pulse-slow'>
+          <Gift className='w-5 h-5 text-amber-600 dark:text-amber-500' />
+          <span className='text-amber-800 dark:text-amber-200 font-medium'>
+            تازه واردید؟{' '}
+            <span className='font-bold underline decoration-amber-500/50 underline-offset-4'>
+              ۱۴ روز اشتراک رایگان
+            </span>{' '}
+            بعد از ثبت نام اولیه
           </span>
         </div>
       )}
@@ -106,15 +84,17 @@ export function NavigationFooter() {
   const linkText = user ? 'بازگشت صفحه اصلی' : 'بازگشت به داشبورد';
 
   return (
-    <div className="mt-16 text-center text-slate-500 text-sm">
-      <Link href={linkTarget} className="inline-flex items-center gap-2 mt-4 text-amber-600 hover:text-amber-700 font-medium">
-        <ArrowLeft className="w-4 h-4" />
+    <div className='mt-16 text-center text-slate-500 text-sm'>
+      <Link
+        href={linkTarget}
+        className='inline-flex items-center gap-2 mt-4 text-amber-600 hover:text-amber-700 font-medium'
+      >
+        <ArrowLeft className='w-4 h-4' />
         {linkText}
       </Link>
     </div>
   );
 }
-
 
 import { useEffect } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
@@ -123,23 +103,30 @@ import { Loader2 } from 'lucide-react';
 import { initiatePaymentAction, ActionState } from '../actions/payment';
 
 // --- A NEW, HOOK-AWARE BUY BUTTON ---
-function SubmitButton({ text, isPopular }: { text: string, isPopular: boolean }) {
+function SubmitButton({
+  text,
+  isPopular,
+}: {
+  text: string;
+  isPopular: boolean;
+}) {
   const { pending } = useFormStatus();
 
   return (
     <button
-      type="submit"
+      type='submit'
       disabled={pending}
       className={`w-full cursor-pointer relative z-10 py-4 rounded-xl font-bold text-center transition-all flex items-center justify-center gap-2
-      ${isPopular
-          ? "bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-lg shadow-amber-500/25"
-          : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white"
-        }
+      ${
+        isPopular
+          ? 'bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-lg shadow-amber-500/25'
+          : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white'
+      }
       disabled:opacity-70 disabled:cursor-not-allowed`}
     >
       {pending ? (
         <>
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <Loader2 className='w-5 h-5 animate-spin' />
           <span>لطفا صبر کنید...</span>
         </>
       ) : (
@@ -156,12 +143,19 @@ interface PlanFormWrapperProps {
   isPopular?: boolean;
 }
 
-export function PlanFormWrapper({ planKey, buttonText, isPopular = false }: PlanFormWrapperProps) {
-  const initialState: ActionState = { success: false, message: "" };
+export function PlanFormWrapper({
+  planKey,
+  buttonText,
+  isPopular = false,
+}: PlanFormWrapperProps) {
+  const initialState: ActionState = { success: false, message: '' };
 
   // Bind the planKey to the server action
   const initiatePaymentWithPlan = initiatePaymentAction.bind(null, planKey);
-  const [state, formAction] = useFormState(initiatePaymentWithPlan, initialState);
+  const [state, formAction] = useFormState(
+    initiatePaymentWithPlan,
+    initialState,
+  );
 
   useEffect(() => {
     if (state.success && state.url) {
@@ -169,7 +163,6 @@ export function PlanFormWrapper({ planKey, buttonText, isPopular = false }: Plan
       // Redirect on success
       window.location.href = state.url;
     } else if (!state.success && state.message) {
-
       console.log('🍎🍎🍎', state);
 
       // Show toast on error
@@ -183,4 +176,3 @@ export function PlanFormWrapper({ planKey, buttonText, isPopular = false }: Plan
     </form>
   );
 }
-

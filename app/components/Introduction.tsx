@@ -113,7 +113,7 @@ export const WhatWeDoSection = () => {
                 <div className="border-t border-slate-200 dark:border-slate-800 pt-16">
                     <div className="text-center mb-12">
                         <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                            موتور جستجو چگونه کار می‌کند؟
+                            موتور جستجوی ما چگونه کار می‌کند؟
                         </h3>
                         <p className="text-slate-500 dark:text-slate-400 mt-2">فرآیند تبدیل داده‌های خام به سیگنال معاملاتی</p>
                     </div>
