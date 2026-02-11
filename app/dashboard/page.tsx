@@ -1,36 +1,38 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/dashboard/page.tsx
 import { prisma } from '@/lib/prisma';
-import { ThemeToggle, FilterBar } from './components/dashboard-ui';
-import { startOfDay, startOfWeek, startOfMonth, subDays } from 'date-fns';
-import { SignalRow } from './components/signalRow';
+import { FilterBar } from './components/dashboard-ui';
+import { startOfDay, startOfWeek, startOfMonth } from 'date-fns';
 import { SignalList } from './components/SignalList';
+import { Pagination } from './components/Pagination'; // Import the new component
 
 interface PageProps {
   searchParams: Promise<{
     period?: string;
     type?: string;
+    page?: string; // Add page param
   }>;
 }
 
 export default async function DashboardPage(props: PageProps) {
-  // Await searchParams for Next.js 15/16
   const params = await props.searchParams;
+  
+  // 1. Parse Pagination Params
+  const page = Number(params.page) || 1;
+  const pageSize = 20;
+  const skip = (page - 1) * pageSize;
+
   const period = params.period || 'all';
   const type = params.type || 'all';
 
-  // 1. Build Filter Logic
+  // 2. Build Filter Logic
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const whereClause: any = {};
 
-  // Time Filter
   const now = new Date();
   if (period === 'today') whereClause.createdAt = { gte: startOfDay(now) };
   else if (period === 'week') whereClause.createdAt = { gte: startOfWeek(now) };
-  else if (period === 'month')
-    whereClause.createdAt = { gte: startOfMonth(now) };
+  else if (period === 'month') whereClause.createdAt = { gte: startOfMonth(now) };
 
-  // Type Filter (Querying JSON fields is tricky, Prisma 5+ supports filtering JSON paths)
-  // Simple heuristic: check if JSON string contains "BUY" for the specific type
   if (type === 'buy_call') {
     whereClause.callAdvice = { path: ['decision'], equals: 'BUY' };
   } else if (type === 'buy_put') {
@@ -42,18 +44,23 @@ export default async function DashboardPage(props: PageProps) {
     ];
   }
 
-  // 2. Fetch Data
-  const signals = await prisma.talebSignal.findMany({
-    where: whereClause,
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  });
+  // 3. Fetch Data & Count (Parallel for performance)
+  const [signals, totalCount] = await prisma.$transaction([
+    prisma.talebSignal.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      skip: skip,
+      take: pageSize,
+    }),
+    prisma.talebSignal.count({
+      where: whereClause,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div
-      className='min-h-screen bg-gray-50 dark:bg-black transition-colors'
-      dir='rtl'
-    >
+    <div className='min-h-screen bg-gray-50 dark:bg-black transition-colors' dir='rtl'>
       <div className='max-w-7xl mx-auto p-4 md:p-8 space-y-6'>
         {/* Header & Controls */}
         <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
@@ -68,7 +75,6 @@ export default async function DashboardPage(props: PageProps) {
 
           <div className='flex items-center gap-3'>
             <FilterBar />
-            {/* <ThemeToggle /> */}
           </div>
         </div>
 
@@ -85,9 +91,13 @@ export default async function DashboardPage(props: PageProps) {
                 </tr>
               </thead>
 
+              {/* Pass signals to the list */}
               <SignalList signals={signals} />
             </table>
           </div>
+          
+          {/* Pagination Controls */}
+          <Pagination currentPage={page} totalPages={totalPages} />
         </div>
       </div>
     </div>
