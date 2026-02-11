@@ -316,7 +316,7 @@ export default async function HomePage() {
                 </li>
                 <li>
                   <Link
-                    href='#'
+                    href='/policy'
                     className='hover:text-amber-600 transition-colors'
                   >
                     قوانین و مقررات
