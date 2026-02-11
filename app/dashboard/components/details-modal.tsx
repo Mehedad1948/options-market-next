@@ -107,7 +107,6 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
         if (!res.ok) throw new Error('Failed to load signal');
 
         const data = await res.json();
-        console.log('🚀🚀🚀', data);
         setFetchedData(data);
       } catch (err) {
         console.error(err);

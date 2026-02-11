@@ -21,7 +21,7 @@ const toPersianDigits = (num: number) => {
   return new Intl.NumberFormat('fa-IR').format(num);
 };
 
-// --- Helper: Date & Relative Time Logic ---
+
 const getDateTimeInfo = (dateInput: string | Date) => {
   if (!dateInput)
     return {
@@ -34,27 +34,39 @@ const getDateTimeInfo = (dateInput: string | Date) => {
   const d = new Date(dateInput);
   const now = new Date();
 
-  // Formatters
-  const dateFormatter = new Intl.DateTimeFormat('fa-IR-u-nu-latn', {
+  // 1. Formatters (Native Persian Locale)
+  
+  // For comparison (YYYY/MM/DD) - keeping latn for logic, but we won't display this directly
+  const compareFormatter = new Intl.DateTimeFormat('en-US-u-ca-persian', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   });
 
-  const timeFormatter = new Intl.DateTimeFormat('fa-IR-u-nu-latn', {
+  // For Display (Readable: ۲۲ بهمن ۱۴۰۳)
+  const readableFormatter = new Intl.DateTimeFormat('fa-IR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  // For Time (۱۲:۳۰)
+  const timeFormatter = new Intl.DateTimeFormat('fa-IR', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   });
 
-  const inputDateString = dateFormatter.format(d);
-  const todayString = dateFormatter.format(now);
+  const inputDateString = compareFormatter.format(d);
+  const todayString = compareFormatter.format(now);
 
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayString = dateFormatter.format(yesterdayDate);
+  const yesterdayString = compareFormatter.format(yesterdayDate);
 
-  // 1. Logic for TODAY (Relative Time)
+  // --- LOGIC ---
+
+  // A. TODAY (Relative Time)
   if (inputDateString === todayString) {
     const diffInSeconds = Math.floor((now.getTime() - d.getTime()) / 1000);
     const diffInMinutes = Math.floor(diffInSeconds / 60);
@@ -71,31 +83,32 @@ const getDateTimeInfo = (dateInput: string | Date) => {
     }
 
     return {
-      mainLabel: 'امروز',
-      subLabel: relativeLabel,
-      className: 'text-emerald-600 dark:text-emerald-400 font-extrabold',
+      mainLabel: relativeLabel, // e.g. "۲ ساعت پیش"
+      subLabel: timeFormatter.format(d), // e.g. "۱۴:۳۰"
+      className: 'text-emerald-600 dark:text-emerald-400 font-bold',
       isToday: true,
     };
   }
 
-  // 2. Logic for YESTERDAY
+  // B. YESTERDAY
   if (inputDateString === yesterdayString) {
     return {
       mainLabel: 'دیروز',
-      subLabel: timeFormatter.format(d), // Show explicit time for yesterday
-      className: 'text-amber-600 dark:text-amber-400 font-bold',
+      subLabel: timeFormatter.format(d),
+      className: 'text-amber-600 dark:text-amber-400 font-medium',
       isToday: false,
     };
   }
 
-  // 3. Logic for OLDER dates
+  // C. OLDER DATES (Readable Persian)
   return {
-    mainLabel: inputDateString,
-    subLabel: timeFormatter.format(d),
+    mainLabel: readableFormatter.format(d), // e.g. "۲۲ بهمن ۱۴۰۳"
+    subLabel: timeFormatter.format(d),      // e.g. "۰۹:۱۵"
     className: 'text-gray-600 dark:text-gray-400 font-medium',
     isToday: false,
   };
 };
+
 
 // --- Component ---
 
