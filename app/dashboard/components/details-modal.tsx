@@ -80,7 +80,6 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
 
   const isOpen = !!signalId || !!initialData;
 
-  console.log({ initialData, isOpen });
   // 2. Close Handler
   const onClose = () => {
     setSignalId(null);
