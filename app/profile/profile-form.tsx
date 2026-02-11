@@ -3,10 +3,11 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { updateProfile } from './actions';
-import { User, Bell, Shield, Smartphone, Save, Info, Loader2, LogOut, Receipt, CheckCircle2, Clock, AlertCircle, Calendar, CreditCard, Hash } from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { User, Bell, Shield, Smartphone, Save, Info, Loader2, LogOut, Receipt, CheckCircle2, Clock, AlertCircle, Calendar, CreditCard, Hash, Globe, XCircle } from 'lucide-react';
+import { useState, useTransition, useEffect } from 'react';
 import { logoutAction, } from '@/lib/auth';
 import { Modal } from '../components/ui/modal';
+import { toast } from 'sonner'; // Ensure sonner is installed/imported
 
 // Define Payment Type
 interface Payment {
@@ -28,7 +29,7 @@ interface UserData {
   subscriptionExpiresAt: Date | null;
   notifyTelegram: boolean;
   notifyWeb: boolean;
-  payments?: Payment[]; // Added optional payments array
+  payments?: Payment[];
 }
 
 function SubmitButton() {
@@ -68,11 +69,8 @@ function LogoutButton() {
   );
 }
 
-// --- NEW COMPONENT: PAYMENT HISTORY ITEM ---
 function PaymentItem({ payment, onClick }: { payment: Payment, onClick: () => void }) {
   const date = new Date(payment.createdAt).toLocaleDateString('fa-IR');
-
-  // Status styling
   let statusColor = "text-slate-500 bg-slate-100 dark:bg-slate-800";
   let statusText = payment.status;
 
@@ -103,7 +101,6 @@ function PaymentItem({ payment, onClick }: { payment: Payment, onClick: () => vo
           <div className="text-xs text-slate-500 mt-1">{payment.description || 'افزایش اعتبار'}</div>
         </div>
       </div>
-
       <div className="text-right">
         <div className="text-xs tracking-wider text-slate-500 mb-1">{date}</div>
         <div className={`text-xs px-2 py-0.5 rounded-md inline-block ${statusColor} font-medium`}>
@@ -114,14 +111,71 @@ function PaymentItem({ payment, onClick }: { payment: Payment, onClick: () => vo
   );
 }
 
+// Helper for Modal Details
+function DetailRow({ label, value, icon, isMono, isLtr, className }: any) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
+      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <div className={`font-medium text-slate-800 dark:text-slate-200 ${isMono ? 'font-mono' : ''} ${isLtr ? 'text-left' : 'text-right'} ${className}`}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function ReadOnlyField({ label, value, icon, isMono, badge, dir }: any) {
+  return (
+    <div className="flex flex-col gap-1 opacity-80 cursor-not-allowed">
+      <span className="text-xs text-slate-500 font-medium ml-1">{label}</span>
+      <div dir={dir || 'rtl'} className="flex items-center justify-between bg-slate-200/50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-4 py-3 rounded-xl">
+        <span className={`text-slate-700 dark:text-slate-300 ${isMono ? 'font-mono' : ''} ${badge ? 'text-amber-600 dark:text-amber-500 font-bold' : ''}`}>
+          {value}
+        </span>
+        {icon && <span className="text-slate-400">{icon}</span>}
+      </div>
+    </div>
+  )
+}
+
 export default function ProfileForm({ user }: { user: UserData }) {
   const [state, formAction] = useFormState(updateProfile, null);
   const [notifyTg, setNotifyTg] = useState(user.notifyTelegram);
   const [notifyWeb, setnotifyWeb] = useState(user.notifyWeb);
-
-  // Modal State
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-  console.log('🐞🐞', selectedPayment, user);
+
+  // --- 🆕 NATIVE PERMISSION LOGIC ---
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setPermissionStatus(Notification.permission);
+    }
+  }, []);
+
+  const handleRequestPermission = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
+    if (!('Notification' in window)) {
+      toast.error('مرورگر شما پشتیبانی نمی‌کند');
+      return;
+    }
+
+    const result = await Notification.requestPermission();
+    setPermissionStatus(result);
+
+    if (result === 'granted') {
+      toast.success('دسترسی فعال شد', { description: 'یک پیام آزمایشی ارسال شد.' });
+      new Notification('فعال‌سازی موفق', {
+        body: 'سیگنال‌های جدید به شما اطلاع داده می‌شود.',
+        icon: '/icons/icon-192x192.png'
+      });
+    } else if (result === 'denied') {
+      toast.error('دسترسی رد شد', { description: 'لطفا در تنظیمات مرورگر اجازه دهید.' });
+    }
+  };
+  // ----------------------------------
 
   return (
     <>
@@ -160,6 +214,8 @@ export default function ProfileForm({ user }: { user: UserData }) {
                 <Bell className="w-5 h-5 text-amber-500" />
                 تنظیمات اعلان‌ها
               </h3>
+              
+              {/* Telegram */}
               <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-800 last:border-0">
                 <div><div className="font-medium">اطلاع‌رسانی تلگرام</div></div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -167,13 +223,49 @@ export default function ProfileForm({ user }: { user: UserData }) {
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                 </label>
               </div>
-              <div className="flex items-center justify-between py-4">
-                <div><div className="font-medium">اطلاع‌رسانی اپلیکیشن</div></div>
+
+              {/* Web App Notification (Database Preference) */}
+              <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <div className="font-medium">اطلاع‌رسانی داخل برنامه</div>
+                  <div className="text-xs text-slate-500 mt-0.5">نمایش پیام در هنگام کار با داشبورد</div>
+                </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" name="notifyWeb" checked={notifyWeb} onChange={() => setnotifyWeb(!notifyWeb)} className="sr-only peer" />
                   <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                 </label>
               </div>
+
+              {/* --- 🆕 NATIVE BROWSER PERMISSION --- */}
+              <div className="flex items-center justify-between py-4">
+                <div className="flex items-start gap-2">
+                   <div className="mt-1"><Globe className="w-4 h-4 text-slate-400" /></div>
+                   <div>
+                    <div className="font-medium">مجوز اعلان سیستم</div>
+                    <div className="text-xs text-slate-500 mt-0.5">دریافت پیام روی ویندوز/موبایل</div>
+                   </div>
+                </div>
+                
+                {permissionStatus === 'granted' ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-lg text-xs font-bold cursor-default">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>فعال</span>
+                  </div>
+                ) : permissionStatus === 'denied' ? (
+                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 rounded-lg text-xs font-bold cursor-help" title="برای فعال‌سازی باید از تنظیمات مرورگر (کنار آدرس سایت) اقدام کنید.">
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>مسدود شده</span>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={handleRequestPermission}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500 hover:text-white dark:hover:text-slate-900 rounded-lg text-xs font-bold transition-all"
+                  >
+                    فعال‌سازی
+                  </button>
+                )}
+              </div>
+
             </div>
           </div>
 
@@ -192,7 +284,7 @@ export default function ProfileForm({ user }: { user: UserData }) {
               </div>
             </div>
 
-            {/* 4. PAYMENT HISTORY (NEW SECTION) */}
+            {/* 4. PAYMENT HISTORY */}
             <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
               <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-700 dark:text-slate-200">
                 <Receipt className="w-5 h-5 text-amber-500" />
@@ -233,14 +325,12 @@ export default function ProfileForm({ user }: { user: UserData }) {
       >
         {selectedPayment && (
           <div className="space-y-6">
-            {/* Header Amount */}
             <div className="text-center py-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
               <div className="text-sm text-slate-500 mb-1">مبلغ پرداختی</div>
               <div className="text-2xl font-bold text-slate-800 dark:text-white">
                 {Number(selectedPayment.amount).toLocaleString('fa-IR')} <span className="text-sm font-normal text-slate-500">تومان</span>
               </div>
 
-              {/* FIXED COLOR LOGIC HERE */}
               <div className={`inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-full text-xs font-medium 
       ${selectedPayment.status === 'SUCCESS'
                   ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
@@ -254,14 +344,12 @@ export default function ProfileForm({ user }: { user: UserData }) {
               </div>
             </div>
 
-            {/* Details Grid */}
             <div className="grid gap-4">
               <DetailRow
                 icon={<Info className="w-4 h-4" />}
                 label="شرح"
                 value={selectedPayment.description || '---'}
               />
-              {/* ... rest of the rows ... */}
               <DetailRow
                 icon={<Calendar className="w-4 h-4" />}
                 label="تاریخ و ساعت"
@@ -290,38 +378,8 @@ export default function ProfileForm({ user }: { user: UserData }) {
               </div>
             )}
           </div>
-
         )}
       </Modal>
     </>
   );
-}
-
-// Helper for Modal Details
-function DetailRow({ label, value, icon, isMono, isLtr, className }: any) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
-      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <div className={`font-medium text-slate-800 dark:text-slate-200 ${isMono ? 'font-mono' : ''} ${isLtr ? 'text-left' : 'text-right'} ${className}`}>
-        {value}
-      </div>
-    </div>
-  )
-}
-
-function ReadOnlyField({ label, value, icon, isMono, badge, dir }: any) {
-  return (
-    <div className="flex flex-col gap-1 opacity-80 cursor-not-allowed">
-      <span className="text-xs text-slate-500 font-medium ml-1">{label}</span>
-      <div dir={dir || 'rtl'} className="flex items-center justify-between bg-slate-200/50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-4 py-3 rounded-xl">
-        <span className={`text-slate-700 dark:text-slate-300 ${isMono ? 'font-mono' : ''} ${badge ? 'text-amber-600 dark:text-amber-500 font-bold' : ''}`}>
-          {value}
-        </span>
-        {icon && <span className="text-slate-400">{icon}</span>}
-      </div>
-    </div>
-  )
 }

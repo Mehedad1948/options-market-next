@@ -32,7 +32,6 @@ export class NotificationService {
 
 static async broadcastEvent(eventType: string, data: any) {
     // 1. Log it
-    console.log(`[Event Broadcast]: ${eventType}`, data);
 
     // 2. Emit to the Event Bus (The API route is listening to this)
     eventBus.emit('sse-message', {
