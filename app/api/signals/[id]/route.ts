@@ -45,7 +45,7 @@ export async function GET(
     // We don't need to map/transform here because we want the raw data for the details page
     return NextResponse.json(signal);
   } catch (error) {
-    console.error(`Error fetching signal ${params.id}:`, error);
+    console.error(`Error fetching signal:`, error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 },
