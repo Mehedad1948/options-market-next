@@ -1,27 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // app/profile/actions.ts
-'use server'
+'use server';
 
 import { z } from 'zod'; // Optional: for validation
 import { prisma } from '@/lib/prisma';
 import { verifySession } from '@/lib/auth';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { cookies } from 'next/headers';
 
 // Define the schema for updates
 const ProfileSchema = z.object({
-  firstName: z.string().min(2, "نام باید حداقل ۲ حرف باشد").optional().or(z.literal('')),
-  lastName: z.string().min(2, "نام خانوادگی باید حداقل ۲ حرف باشد").optional().or(z.literal('')),
+  firstName: z
+    .string()
+    .min(2, 'نام باید حداقل ۲ حرف باشد')
+    .optional()
+    .or(z.literal('')),
+  lastName: z
+    .string()
+    .min(2, 'نام خانوادگی باید حداقل ۲ حرف باشد')
+    .optional()
+    .or(z.literal('')),
   notifyTelegram: z.boolean(),
   notifyWeb: z.boolean(),
 });
 
 export async function updateProfile(prevState: any, formData: FormData) {
   const cookieStore = await cookies();
-  const session = await verifySession(cookieStore.get("session")?.value);
+  const session = await verifySession(cookieStore.get('session')?.value);
 
   if (!session || !session.userId) {
-    return { success: false, message: "لطفا مجددا وارد شوید" };
+    return { success: false, message: 'لطفا مجددا وارد شوید' };
   }
 
   // Parse data
@@ -44,10 +52,10 @@ export async function updateProfile(prevState: any, formData: FormData) {
       },
     });
 
-    revalidatePath('/profile');
-    return { success: true, message: "تغییرات با موفقیت ذخیره شد" };
+    updateTag(`user-${session.userId}` );
+    return { success: true, message: 'تغییرات با موفقیت ذخیره شد' };
   } catch (error) {
-    console.error("Profile update error:", error);
-    return { success: false, message: "خطا در ذخیره اطلاعات" };
+    console.error('Profile update error:', error);
+    return { success: false, message: 'خطا در ذخیره اطلاعات' };
   }
 }

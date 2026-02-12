@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { loginUser } from '@/lib/auth';
+import { updateTag } from 'next/cache';
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +17,10 @@ export async function POST(request: Request) {
     });
 
     if (!otpRecord || !otpRecord.userId) {
-      return NextResponse.json({ error: 'کد وارد شده اشتباه یا منقضی شده است' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'کد وارد شده اشتباه یا منقضی شده است' },
+        { status: 400 },
+      );
     }
 
     // Clean up
@@ -24,10 +28,12 @@ export async function POST(request: Request) {
 
     // Session Creation
     // Note: If user login via SMS but has no telegramId, ensure loginUser handles null telegramId gracefully
-    await loginUser(otpRecord.userId, otpRecord?.user?.telegramId || 'sms-user'); 
-
+    await loginUser(
+      otpRecord.userId,
+      otpRecord?.user?.telegramId || 'sms-user',
+    );
+    updateTag(`user-${otpRecord.userId}`);
     return NextResponse.json({ success: true });
-
   } catch (error) {
     console.error('Verify Error:', error);
     return NextResponse.json({ error: 'خطای سیستمی' }, { status: 500 });

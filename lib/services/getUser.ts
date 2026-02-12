@@ -1,19 +1,21 @@
 import { userDashboardSelect } from '@/types/user';
 import { cache } from 'react';
-import { getSession } from '../auth';
+import { getSession, verifySession } from '../auth';
 import { prisma } from '../prisma';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { cacheLife, cacheTag } from 'next/cache';
 
-export const getUser = cache(async () => {
-  const session = await getSession();
-
-  if (!session) {
+export const getUserCache = cache(async (userId: string) => {
+  'use cache';
+  cacheLife('minutes');
+  cacheTag(`user-${userId}`);
+  if (!userId) {
     return null;
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.userId as string },
+    where: { id: userId as string },
     select: userDashboardSelect,
   });
 
@@ -23,3 +25,8 @@ export const getUser = cache(async () => {
 
   return user;
 });
+
+export async function getUser() {
+  const session = await getSession();
+  return session ? getUserCache(session.userId) : null;
+}

@@ -15,3 +15,12 @@ export const userDashboardSelect = {
 export type DashboardUser = Prisma.UserGetPayload<{
   select: typeof userDashboardSelect;
 }>;
+
+
+export interface SessionPayload {
+  userId: string;
+  telegramId: string;
+  expires: number; // The timestamp when the session should expire
+  iat: number;     // Issued at timestamp (standard JWT claim)
+  exp: number;     // Expiration time timestamp (standard JWT claim)
+}

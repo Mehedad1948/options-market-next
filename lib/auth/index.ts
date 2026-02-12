@@ -1,5 +1,6 @@
 'use server';
 
+import { SessionPayload } from '@/types/user';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -39,13 +40,25 @@ export async function getSession() {
 }
 
 // THIS FUNCTION IS CRITICAL FOR MIDDLEWARE
-export async function verifySession(token: string | undefined = '') {
+
+export async function verifySession(
+  token: string | undefined = '',
+): Promise<SessionPayload | null> {
+  if (!token) {
+    return null;
+  }
+
   try {
-    const { payload } = await jwtVerify(token, key, {
+    // Use the generic parameter <SessionPayload> to type the payload
+    const { payload } = await jwtVerify<SessionPayload>(token, key, {
       algorithms: ['HS256'],
     });
+
+    // Now, 'payload' is correctly typed as SessionPayload
     return payload;
   } catch (error) {
+    // This could be due to an expired token or an invalid signature
+    console.error('Failed to verify session:', error);
     return null;
   }
 }

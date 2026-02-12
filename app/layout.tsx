@@ -7,7 +7,8 @@ import { UserProvider } from './providers/user-context';
 import { getUser } from '@/lib/services/getUser';
 import { Suspense } from 'react';
 import { Toaster } from 'sonner';
-import { NuqsAdapter } from 'nuqs/adapters/next/app'
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
+import LayoutServerPromises from './providers/layout-server-promises';
 
 // 2. Configure Vazirmatn (The best free Persian font)
 const vazirMatn = Vazirmatn({
@@ -106,22 +107,22 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const userPromise = getUser();
-
   return (
     <html className='dark' lang='fa' dir='rtl' suppressHydrationWarning>
       <body className={`${vazirMatn.className} antialiased font-sans`}>
-        <UserProvider userPromise={userPromise}>
-          <Toaster position='top-center' richColors closeButton />
-          <ThemeProvider>
-            <NuqsAdapter>
-              <Suspense>
-                <Header />
-              </Suspense>
-              <Suspense>{children}</Suspense>
-            </NuqsAdapter>
-          </ThemeProvider>
-        </UserProvider>
+        <Suspense>
+          <LayoutServerPromises>
+            <Toaster position='top-center' richColors closeButton />
+            <ThemeProvider>
+              <NuqsAdapter>
+                <Suspense>
+                  <Header />
+                </Suspense>
+                <Suspense>{children}</Suspense>
+              </NuqsAdapter>
+            </ThemeProvider>
+          </LayoutServerPromises>
+        </Suspense>
       </body>
     </html>
   );
