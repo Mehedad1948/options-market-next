@@ -1,4 +1,4 @@
-'use cache'
+'use cache';
 
 import type { Metadata } from 'next';
 import { Vazirmatn, Geist_Mono } from 'next/font/google'; // 1. Import Vazirmatn
@@ -106,24 +106,22 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
+  navbar,
 }: Readonly<{
   children: React.ReactNode;
+  navbar: React.ReactNode;
 }>) {
   return (
     <html className='dark' lang='fa' dir='rtl' suppressHydrationWarning>
       <body className={`${vazirMatn.className} antialiased font-sans`}>
         <Suspense>
-          <LayoutServerPromises>
-            <Toaster position='top-center' richColors closeButton />
-            <ThemeProvider>
-              <NuqsAdapter>
-                <Suspense>
-                  <Header />
-                </Suspense>
-                <Suspense>{children}</Suspense>
-              </NuqsAdapter>
-            </ThemeProvider>
-          </LayoutServerPromises>
+          <Toaster position='top-center' richColors closeButton />
+          <ThemeProvider>
+            <NuqsAdapter>
+              <Suspense>{navbar}</Suspense>
+              <Suspense>{children}</Suspense>
+            </NuqsAdapter>
+          </ThemeProvider>
         </Suspense>
       </body>
     </html>
