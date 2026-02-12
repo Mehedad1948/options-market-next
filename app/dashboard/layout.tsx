@@ -2,6 +2,7 @@ import { getUser } from '@/lib/services/getUser';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import StreamListener from './stream-listener';
+import LayoutServerPromises from '../providers/layout-server-promises';
 
 export default async function Layout({
   children,
@@ -16,7 +17,9 @@ export default async function Layout({
     <section>
       {/* 1. The Real-Time Listener: Handles data stream & notifications */}
       <Suspense>
-        <StreamListener />
+        <LayoutServerPromises>
+          <StreamListener />
+        </LayoutServerPromises>
       </Suspense>
 
       {/* 2. The Toast Provider: Renders the actual popup bubbles */}
