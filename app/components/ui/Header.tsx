@@ -26,7 +26,7 @@ export default function Header() {
 
         {/* LEFT SIDE: Actions */}
         <div className="flex items-center gap-3 md:gap-6">
-          <Suspense>
+          <Suspense fallback={<div className='bg-amber-50 animate-pulse w-24 h-9 rounded-xl'></div>}>
             <DashboardLink />
           </Suspense>
 
@@ -35,7 +35,7 @@ export default function Header() {
           {/* Vertical Divider */}
           <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
 
-          <Suspense fallback={<Loader2 className='animate-spin' />}>
+          <Suspense fallback={<Loader2 className='animate-spin text-amber-400' />}>
             <UserMenu />
           </Suspense>
         </div>
