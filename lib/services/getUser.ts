@@ -13,7 +13,7 @@ export const getUserCache = cache(async (userId: string) => {
   if (!userId) {
     return null;
   }
-console.log('✅✅ I ran to fetch this user', userId);
+  console.log('✅✅ I ran to fetch this user', userId);
 
   const user = await prisma.user.findUnique({
     where: { id: userId as string },
@@ -29,5 +29,7 @@ console.log('✅✅ I ran to fetch this user', userId);
 
 export async function getUser() {
   const session = await getSession();
+  console.log('⭕⭕⭕ I Called hte User Fetch', session?.userId);
+
   return session ? getUserCache(session.userId) : null;
 }
