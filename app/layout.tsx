@@ -1,3 +1,5 @@
+'use cache'
+
 import type { Metadata } from 'next';
 import { Vazirmatn, Geist_Mono } from 'next/font/google'; // 1. Import Vazirmatn
 import './globals.css';
