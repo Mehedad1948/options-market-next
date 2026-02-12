@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { loginUser } from '@/lib/auth';
-import { updateTag } from 'next/cache';
+import { revalidateTag, updateTag } from 'next/cache';
 
 export async function POST(request: Request) {
   try {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       otpRecord.userId,
       otpRecord?.user?.telegramId || 'sms-user',
     );
-    updateTag(`user-${otpRecord.userId}`);
+    revalidateTag(`user-${otpRecord.userId}`, 'layout');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Verify Error:', error);
