@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BotButton } from "./bot-link";
 import { UserMenu } from "./user-menu";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Loader2 } from "lucide-react";
 import { DashboardLink } from './dashboard-link';
 import { Suspense } from 'react';
 import { ThemeToggle } from './ThemeToggle';
@@ -35,7 +35,7 @@ export default function Header() {
           {/* Vertical Divider */}
           <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
 
-          <Suspense>
+          <Suspense fallback={<Loader2 className='animate-spin' />}>
             <UserMenu />
           </Suspense>
         </div>
