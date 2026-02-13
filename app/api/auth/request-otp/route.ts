@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     }
 
     // 4. Generate Code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = Math.floor(10000 + Math.random() * 90000).toString();
     const expiresAt = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
 
     // 5. Save OTP
@@ -126,7 +126,10 @@ export async function POST(request: Request) {
       // Telegram Logic
       const botToken = process.env.TELEGRAM_BOT_TOKEN;
       const text = `🔐 *کد ورود به داشبورد*\n\nکد: \`${code}\`\n\nاین کد تا ۲ دقیقه معتبر است.`;
-      console.log('👋👋👋', `${process.env.PROXY_BASE_URL}/telegram/send-message`);
+      console.log(
+        '👋👋👋',
+        `${process.env.PROXY_BASE_URL}/telegram/send-message`,
+      );
 
       if (user.telegramId) {
         await fetch(`${process.env.PROXY_BASE_URL}/telegram/send-message`, {

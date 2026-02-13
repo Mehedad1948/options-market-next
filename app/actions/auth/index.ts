@@ -26,6 +26,8 @@ export async function verifyOtpAction(
       include: { user: true },
     });
 
+    console.log('🎄🎄', code, otpRecord, identifier);
+
     if (!otpRecord || !otpRecord.userId) {
       return { error: 'کد وارد شده اشتباه یا منقضی شده است' };
     }
