@@ -1,6 +1,7 @@
 {
     "next": {
-        "mirror": false
+        "mirror": false,
+           "modifyConfig": false
   },
       "port": 3000
 }
