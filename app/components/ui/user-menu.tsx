@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { LogIn, User as UserIcon, Clock, AlertTriangle } from "lucide-react";
 import { useUser } from '@/app/providers/user-context';
+import { usePathname } from 'next/navigation';
 
 export  function UserMenu() {
   const user = useUser()
 
+  const pathname = usePathname()
+
   // --- GUEST STATE ---
-  if (!user) {
+  if (!user && !pathname.includes('login')) {
     return (
       <Link
         href="/login"
