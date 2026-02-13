@@ -129,7 +129,7 @@ export async function POST(request: Request) {
       console.log('👋👋👋', botToken);
 
       if (user.telegramId) {
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        await fetch(`${process.env.PROXY_BASE_URL}/telegram/send-message`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
