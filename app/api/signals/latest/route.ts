@@ -11,11 +11,10 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
 
-    console.log('✅✅✅ Payload', session);
 
-    // if (!session) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // 1. Parse Query Parameters from the URL
     const searchParams = request.nextUrl.searchParams;

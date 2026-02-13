@@ -29,6 +29,7 @@ export const getUserCache = cache(async (userId: string) => {
 
 export async function getUser() {
   const session = await getSession();
+  
   console.log('⭕⭕⭕ I Called hte User Fetch', session?.userId);
 
   return session ? getUserCache(session.userId) : null;
