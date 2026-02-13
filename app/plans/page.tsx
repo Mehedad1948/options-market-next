@@ -119,7 +119,7 @@ function GaugeSkeleton() {
 
 export default function PlansPage() {
   return (
-    <div className='min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300'>
+    <div className='min-h-screen pt-14 md:pt-12 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300'>
       <div className='fixed inset-0 z-0 pointer-events-none overflow-hidden'>
         <div className='absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px]' />
         <div className='absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 dark:bg-slate-800/20 rounded-full blur-[120px]' />

@@ -57,7 +57,7 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20">
+    <div className="min-h-screen bg-slate-50 pt-14 md:pt-12 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20">
       
       {/* Header Background */}
       <div className="bg-slate-900 text-white pt-20 pb-20 px-4 relative overflow-hidden">

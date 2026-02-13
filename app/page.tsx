@@ -24,7 +24,7 @@ export default async function HomePage() {
       {/* Optional: Floating Hero Image Decor */}
 
       {/* --- HERO SECTION --- */}
-      <section className='relative pt-20 pb-20 overflow-hidden z-10'>
+      <section className='relative pt-24 lg:pt-32 pb-20 overflow-hidden z-10'>
         <Image
           width={500}
           height={500}

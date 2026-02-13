@@ -37,7 +37,7 @@ const SectionCard = ({
   isWarning?: boolean;
 }) => (
   <div
-    className={`p-6 md:p-8 rounded-3xl border transition-all duration-300 relative z-10
+    className={`p-6 md:p-8  rounded-3xl border transition-all duration-300 relative z-10
     ${
       isWarning
         ? 'bg-amber-500/10 border-amber-500/30 shadow-lg shadow-amber-500/5'
@@ -72,7 +72,7 @@ const SectionCard = ({
 
 export default async function TermsPage() {
   return (
-    <div className='min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300' dir="rtl">
+    <div className='min-h-screen pt-14 md:pt-12 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300' dir="rtl">
       <BackgroundGrid />
 
       <div className='relative z-10 container mx-auto px-4 py-12 max-w-4xl'>

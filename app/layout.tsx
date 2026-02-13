@@ -119,6 +119,7 @@ export default async function RootLayout({
           <ThemeProvider>
             <NuqsAdapter>
               <Suspense>{navbar}</Suspense>
+              
               <Suspense>{children}</Suspense>
             </NuqsAdapter>
           </ThemeProvider>
