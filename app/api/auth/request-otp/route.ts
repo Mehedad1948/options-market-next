@@ -8,7 +8,7 @@ const kavenegarApi = Kavenegar.KavenegarApi({
 });
 
 function normalizePhone(phone: string) {
-  let clean = phone.replace(/\D/g, ''); 
+  let clean = phone.replace(/\D/g, '');
   if (clean.startsWith('09')) {
     clean = '98' + clean.substring(1);
   }
@@ -18,17 +18,20 @@ function normalizePhone(phone: string) {
 // SMS Sender Helper
 function sendSmsOtp(mobile: string, code: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    kavenegarApi.VerifyLookup({
-      receptor: mobile,
-      token: code,
-      template: 'verify', 
-    }, (response, status) => {
-      if (status === 200) resolve();
-      else {
-        console.error('Kavenegar Error:', status, response);
-        reject(new Error('SMS Failed'));
-      }
-    });
+    kavenegarApi.VerifyLookup(
+      {
+        receptor: mobile,
+        token: code,
+        template: 'verify',
+      },
+      (response, status) => {
+        if (status === 200) resolve();
+        else {
+          console.error('Kavenegar Error:', status, response);
+          reject(new Error('SMS Failed'));
+        }
+      },
+    );
   });
 }
 
@@ -37,7 +40,10 @@ export async function POST(request: Request) {
     const { phoneNumber, method = 'telegram' } = await request.json();
 
     if (!phoneNumber) {
-      return NextResponse.json({ error: 'شماره موبایل الزامی است' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'شماره موبایل الزامی است' },
+        { status: 400 },
+      );
     }
 
     const cleanPhone = normalizePhone(phoneNumber);
@@ -61,25 +67,36 @@ export async function POST(request: Request) {
           });
         } catch (dbError) {
           console.error('User Creation Error:', dbError);
-          return NextResponse.json({ error: 'خطا در ایجاد حساب کاربری' }, { status: 500 });
+          return NextResponse.json(
+            { error: 'خطا در ایجاد حساب کاربری' },
+            { status: 500 },
+          );
         }
       } else {
         // CANNOT REGISTER VIA TELEGRAM WEB: We don't have their Chat ID yet
-        return NextResponse.json({
-          message: 'حساب کاربری یافت نشد. لطفا برای اولین ورود از گزینه "پیامک" استفاده کنید.',
-          error: 'USER_NOT_FOUND',
-          identifier: cleanPhone
-        }, { status: 404 });
+        return NextResponse.json(
+          {
+            message:
+              'حساب کاربری یافت نشد. لطفا برای اولین ورود از گزینه "پیامک" استفاده کنید.',
+            error: 'USER_NOT_FOUND',
+            identifier: cleanPhone,
+          },
+          { status: 404 },
+        );
       }
     }
 
     // 3. Validation for Telegram Method
     // If user exists (or was just created via SMS logic above) but tries to use Telegram without an ID
     if (method === 'telegram' && !user.telegramId) {
-       return NextResponse.json({
-        message: 'برای دریافت کد تلگرامی، ابتدا باید ربات را استارت کنید تا حساب شما متصل شود.',
-        identifier: cleanPhone
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          message:
+            'برای دریافت کد تلگرامی، ابتدا باید ربات را استارت کنید تا حساب شما متصل شود.',
+          identifier: cleanPhone,
+        },
+        { status: 404 },
+      );
     }
 
     // 4. Generate Code
@@ -103,13 +120,14 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         identifier: cleanPhone,
-        message: 'کد تایید پیامک شد (حساب کاربری ایجاد شد)'
+        message: 'کد تایید پیامک شد (حساب کاربری ایجاد شد)',
       });
     } else {
       // Telegram Logic
       const botToken = process.env.TELEGRAM_BOT_TOKEN;
       const text = `🔐 *کد ورود به داشبورد*\n\nکد: \`${code}\`\n\nاین کد تا ۲ دقیقه معتبر است.`;
-      
+      console.log('👋👋👋', botToken);
+
       if (user.telegramId) {
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
@@ -125,13 +143,11 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         identifier: cleanPhone,
-        message: 'کد به تلگرام ارسال شد'
+        message: 'کد به تلگرام ارسال شد',
       });
     }
-
   } catch (error) {
     console.error('Auth Error:', error);
     return NextResponse.json({ error: 'خطای سیستمی' }, { status: 500 });
   }
 }
-
