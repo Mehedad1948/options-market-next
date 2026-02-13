@@ -4,70 +4,27 @@ import { FilterBar } from './components/dashboard-ui';
 import { startOfDay, startOfWeek, startOfMonth } from 'date-fns';
 import { SignalList } from './components/SignalList';
 import { Pagination } from './components/Pagination'; // Import the new component
+import { SignalServices } from '@/lib/services/signals.service';
+
+
+// Instantiate the service (or use dependency injection if set up)
 
 interface PageProps {
-  searchParams: Promise<{
-    period?: string;
-    type?: string;
-    page?: string; // Add page param
-  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function DashboardPage(props: PageProps) {
-   const params = await props.searchParams;
+  const params = await props.searchParams;
   
-  // 1. Parse Pagination Params
-  const page = Number(params.page) || 1;
-  const pageSize = 20;
-  const skip = (page - 1) * pageSize;
+  const { data: signals, meta } = await SignalServices.getLatest({
+    page: params.page as string,
+    period: params.period as string,
+    type: params.type as string,
+  });
 
-  const period = params.period || 'all';
-  const type = params.type || 'all';
-
-  // 2. Build Filter Logic
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const whereClause: any = {};
-
-  const now = new Date();
-  if (period === 'today') whereClause.createdAt = { gte: startOfDay(now) };
-  else if (period === 'week') whereClause.createdAt = { gte: startOfWeek(now) };
-  else if (period === 'month') whereClause.createdAt = { gte: startOfMonth(now) };
-
-  // --- TYPE FILTERING LOGIC ---
-  if (type === 'buy_call') {
-    whereClause.callAdvice = { path: ['decision'], equals: 'BUY' };
-  } else if (type === 'buy_put') {
-    whereClause.putAdvice = { path: ['decision'], equals: 'BUY' };
-  } else if (type === 'wait') {
-    // If user explicitly asks for "wait", show ONLY double waits
-    whereClause.AND = [
-      { callAdvice: { path: ['decision'], equals: 'WAIT' } },
-      { putAdvice: { path: ['decision'], equals: 'WAIT' } },
-    ];
-  } else {
-    // DEFAULT (type == 'all'): 
-    // Exclude rows where BOTH are 'WAIT'
-    whereClause.NOT = {
-      AND: [
-        { callAdvice: { path: ['decision'], equals: 'WAIT' } },
-        { putAdvice: { path: ['decision'], equals: 'WAIT' } },
-      ]
-    };
-  }
-
-  // 3. Fetch Data & Count (Parallel for performance)
-  const [signals, totalCount] = await prisma.$transaction([
-    prisma.talebSignal.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' },
-      skip: skip,
-      take: pageSize,
-    }),
-    prisma.talebSignal.count({
-      where: whereClause,
-    }),
-  ]);
-  const totalPages = Math.ceil(totalCount / pageSize);
+  // 2. Extract metadata for the UI
+  const page = meta.currentPage;
+  const totalPages = meta.totalPages;
 
   return (
     <div className='min-h-screen bg-gray-50 dark:bg-black transition-colors' dir='rtl'>

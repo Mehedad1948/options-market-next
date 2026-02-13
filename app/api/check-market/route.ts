@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma'; // FIXED: Use singleton to prevent connection leaks
 import { getTehranMarketStatus } from '@/lib/services/tehranMarketStatus';
 import { generateTelegramMessage } from '@/lib/services/generateTelegramMessage';
+import { revalidateTag } from 'next/cache';
 
 export async function GET(request: Request) {
   // OPTIONAL: Add a secret key check so only GitHub Actions can call this
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
     // 4. TELEGRAM NOTIFICATIONS (Only if notify_me is true)
     // ============================================================
     if (result.notify_me && !nothingToSuggest) {
+      revalidateTag('signals', { expire: 0 });
       const savedSignal = await prisma.talebSignal.create({
         data: {
           marketStatus: currentStatus, // Keep your existing status logic
