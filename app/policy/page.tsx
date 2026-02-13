@@ -30,6 +30,11 @@ const SectionCard = ({
   title,
   children,
   isWarning = false,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  isWarning?: boolean;
 }) => (
   <div
     className={`p-6 md:p-8 rounded-3xl border transition-all duration-300 relative z-10
