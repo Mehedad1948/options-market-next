@@ -2,13 +2,13 @@
 
 import iv from 'implied-volatility';
 import axios from 'axios';
-import { TalebResult, OptionCandidate, TalebAIAnalysis } from '@/types/taleb'; 
+import { TalebResult, OptionCandidate, TalebAIAnalysis } from '@/types/taleb';
 import { GoogleGenAI } from '@google/genai';
 
 // --- CONFIGURATION ---
 const API_URL = `https://BrsApi.ir/Api/Tsetmc/Option.php?key=${process.env.BRS_API_KEY || 'FreeWsXDnKpRTg7dfqRMzRlYSYeA83FN'}`;
 const RISK_FREE_RATE = 0.3;
-const MIN_VOLUME_THRESHOLD = 1000; 
+const MIN_VOLUME_THRESHOLD = 1000;
 
 // --- STATIC TEXTS & DEFINITIONS ---
 const TALEB_DESCRIPTIONS = {
@@ -37,14 +37,19 @@ const FIELD_DEFINITIONS = {
   distToBreakEven: 'فاصله تا سر‌به‌سر (%)',
   tradesCount: 'تعداد دفعات معامله',
   volume: 'حجم معاملات',
-  openInterest: 'موقعیت‌های باز'
+  openInterest: 'موقعیت‌های باز',
 };
 
 // --- HELPERS ---
 const cleanNum = (val: any) =>
-  !val ? 0 : typeof val === 'number' ? val : parseFloat(val.toString().replace(/,/g, ''));
+  !val
+    ? 0
+    : typeof val === 'number'
+      ? val
+      : parseFloat(val.toString().replace(/,/g, ''));
 
-const formatPercent = (val: number) => `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
+const formatPercent = (val: number) =>
+  `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
 
 export async function runTalebStrategy(): Promise<TalebResult> {
   console.log('🔄 Engine: Running Taleb Strategy...');
@@ -55,89 +60,128 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
   // 2. Process Math (Returns OptionCandidate OR Null)
   const rawCandidates = rawData.map((option: any): OptionCandidate | null => {
-      const spot = cleanNum(option.base_pc);
-      const strike = cleanNum(option.price_strike);
-      const price = cleanNum(option.pc);
-      const days = cleanNum(option.day_remain);
-      const volume = cleanNum(option.tvol);
-      const openInterest = cleanNum(option.interest_open);
-      
-      const underlyingChange = cleanNum(option.base_pcp);
-      const bestBuyPrice = cleanNum(option.pd1);
-      const bestSellPrice = cleanNum(option.po1);
-      
-      // Calculate Spread
-      let spread = 0;
-      if(bestSellPrice > 0) {
-        spread = ((bestSellPrice - bestBuyPrice) / bestSellPrice) * 100;
-      }
+    const spot = cleanNum(option.base_pc);
+    const strike = cleanNum(option.price_strike);
+    const price = cleanNum(option.pc);
+    const days = cleanNum(option.day_remain);
+    const volume = cleanNum(option.tvol);
+    const openInterest = cleanNum(option.interest_open);
 
-      // Basic Validity Checks
-      if (days <= 2 || price <= 0 || spot <= 0 || openInterest < 10) return null;
+    const underlyingChange = cleanNum(option.base_pcp);
+    const bestBuyPrice = cleanNum(option.pd1);
+    const bestSellPrice = cleanNum(option.po1);
 
-      const isCall = option.type?.toLowerCase().includes('call');
-      const typeStr = isCall ? 'call' : 'put';
-      const T = days / 365.0;
+    // Calculate Spread
+    let spread = 0;
+    if (bestSellPrice > 0) {
+      spread = ((bestSellPrice - bestBuyPrice) / bestSellPrice) * 100;
+    }
 
-      // Break-Even Math
-      const breakEven = isCall ? (strike + price) : (strike - price);
-      const distToBreakEven = ((breakEven - spot) / spot) * 100;
+    // Basic Validity Checks
+    if (days <= 2 || price <= 0 || spot <= 0 || openInterest < 10) return null;
 
-      let impliedVol = 0;
-      try {
-        impliedVol = iv.getImpliedVolatility(
-          price, spot, strike, T, RISK_FREE_RATE, typeStr,
-        );
-      } catch (e) {
-        impliedVol = 0;
-      }
-      
-      const gearing = spot / price;
+    const isCall = option.type?.toLowerCase().includes('call');
+    const typeStr = isCall ? 'call' : 'put';
+    const T = days / 365.0;
 
-      // Raw Numeric Data (Must match OptionMetrics interface)
-      const dataObj = {
+    // Break-Even Math
+    const breakEven = isCall ? strike + price : strike - price;
+    const distToBreakEven = ((breakEven - spot) / spot) * 100;
+
+    let impliedVol = 0;
+    try {
+      impliedVol = iv.getImpliedVolatility(
         price,
+        spot,
         strike,
-        days,
-        iv: impliedVol || 0,
-        gearing: gearing,
-        moneyness: strike / spot - 1,
-        type: typeStr as 'call' | 'put',
-        openInterest: openInterest,
-        volume: volume,
-        spread: parseFloat(spread.toFixed(2)), 
-        underlyingChange: underlyingChange,
-        breakEvenPrice: breakEven,
-        distToBreakEven: parseFloat(distToBreakEven.toFixed(1)),
-        tradesCount: cleanNum(option.tno)
-      };
+        T,
+        RISK_FREE_RATE,
+        typeStr,
+      );
+    } catch (e) {
+      impliedVol = 0;
+    }
 
-      // Return valid object
-      return {
-        symbol: option.l18,
-        data: dataObj,
-        pretty_data: [
-            { key: 'gearing', label: FIELD_DEFINITIONS.gearing, value: gearing.toFixed(1) + 'x', class: 'text-blue-500 font-bold' },
-            { key: 'spread', label: FIELD_DEFINITIONS.spread, value: spread.toFixed(1) + '%', class: spread > 10 ? 'text-red-500' : 'text-emerald-500' },
-            { key: 'iv', label: FIELD_DEFINITIONS.iv, value: (dataObj.iv * 100).toFixed(0) + '%', class: '' },
-            { key: 'underlyingChange', label: FIELD_DEFINITIONS.underlyingChange, value: formatPercent(underlyingChange), class: underlyingChange < 0 ? 'text-red-500' : 'text-green-500' },
-            { key: 'distToBreakEven', label: FIELD_DEFINITIONS.distToBreakEven, value: formatPercent(distToBreakEven), class: '' },
-            { key: 'tradesCount', label: FIELD_DEFINITIONS.tradesCount, value: dataObj.tradesCount.toLocaleString(), class: 'text-gray-500' },
-        ]
-      };
-    });
+    const gearing = spot / price;
+
+    // Raw Numeric Data (Must match OptionMetrics interface)
+    const dataObj = {
+      price,
+      strike,
+      days,
+      iv: impliedVol || 0,
+      gearing: gearing,
+      moneyness: strike / spot - 1,
+      type: typeStr as 'call' | 'put',
+      openInterest: openInterest,
+      volume: volume,
+      spread: parseFloat(spread.toFixed(2)),
+      underlyingChange: underlyingChange,
+      breakEvenPrice: breakEven,
+      distToBreakEven: parseFloat(distToBreakEven.toFixed(1)),
+      tradesCount: cleanNum(option.tno),
+    };
+
+    // Return valid object
+    return {
+      symbol: option.l18,
+      data: dataObj,
+      pretty_data: [
+        {
+          key: 'gearing',
+          label: FIELD_DEFINITIONS.gearing,
+          value: gearing.toFixed(1) + 'x',
+          class: 'text-blue-500 font-bold',
+        },
+        {
+          key: 'spread',
+          label: FIELD_DEFINITIONS.spread,
+          value: spread.toFixed(1) + '%',
+          class: spread > 10 ? 'text-red-500' : 'text-emerald-500',
+        },
+        {
+          key: 'iv',
+          label: FIELD_DEFINITIONS.iv,
+          value: (dataObj.iv * 100).toFixed(0) + '%',
+          class: '',
+        },
+        {
+          key: 'underlyingChange',
+          label: FIELD_DEFINITIONS.underlyingChange,
+          value: formatPercent(underlyingChange),
+          class: underlyingChange < 0 ? 'text-red-500' : 'text-green-500',
+        },
+        {
+          key: 'distToBreakEven',
+          label: FIELD_DEFINITIONS.distToBreakEven,
+          value: formatPercent(distToBreakEven),
+          class: '',
+        },
+        {
+          key: 'tradesCount',
+          label: FIELD_DEFINITIONS.tradesCount,
+          value: dataObj.tradesCount.toLocaleString(),
+          class: 'text-gray-500',
+        },
+      ],
+    };
+  });
 
   // 3. Strict Filtering (Removes Nulls & Enforces Type)
-  const candidates = rawCandidates.filter((c): c is OptionCandidate => c !== null);
+  const candidates = rawCandidates.filter(
+    (c): c is OptionCandidate => c !== null,
+  );
 
   // 4. Strategy Filtering
   const filtered = candidates.filter((c) => {
     const d = c.data;
-    if (d.volume < MIN_VOLUME_THRESHOLD) return false; 
+    if (d.volume < MIN_VOLUME_THRESHOLD) return false;
     if (d.openInterest < 100) return false;
     if (d.spread > 30) return false; // Filter strictly bad spreads
-    if (d.type === 'call' && (d.moneyness < 0.05 || d.moneyness > 0.4)) return false;
-    if (d.type === 'put' && (d.moneyness > -0.05 || d.moneyness < -0.4)) return false;
+    if (d.type === 'call' && (d.moneyness < 0.05 || d.moneyness > 0.4))
+      return false;
+    if (d.type === 'put' && (d.moneyness > -0.05 || d.moneyness < -0.4))
+      return false;
     if (d.price > 8000 || d.iv <= 0 || d.iv > 2.0) return false;
     return true;
   });
@@ -147,8 +191,10 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     b.data.gearing / (b.data.iv || 1) - a.data.gearing / (a.data.iv || 1);
 
   // 5. Creating Lists (Typed as OptionCandidate[])
-  const superRaw = filtered.filter((c) => c.data.gearing > 10 && c.data.iv < 1.0);
-  
+  const superRaw = filtered.filter(
+    (c) => c.data.gearing > 10 && c.data.iv < 1.0,
+  );
+
   const superCalls = superRaw
     .filter((c) => c.data.type === 'call')
     .sort(sortFn)
@@ -158,7 +204,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     .filter((c) => c.data.type === 'put')
     .sort(sortFn)
     .slice(0, 5);
-  
+
   const topCalls = filtered
     .filter((c) => c.data.type === 'call')
     .sort(sortFn)
@@ -172,8 +218,18 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   // Default AI State
   const aiDecision: TalebAIAnalysis = {
     market_sentiment: 'No significant data.',
-    call_suggestion: { decision: 'WAIT', symbol: null, entry_price: 0, reasoning: 'Waiting for signal.' },
-    put_suggestion: { decision: 'WAIT', symbol: null, entry_price: 0, reasoning: 'Waiting for signal.' },
+    call_suggestion: {
+      decision: 'WAIT',
+      symbol: null,
+      entry_price: 0,
+      reasoning: 'Waiting for signal.',
+    },
+    put_suggestion: {
+      decision: 'WAIT',
+      symbol: null,
+      entry_price: 0,
+      reasoning: 'Waiting for signal.',
+    },
   };
 
   // 6. AI Analysis
@@ -182,58 +238,86 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     if (apiKey) {
       try {
         const genAI = new GoogleGenAI({ apiKey });
-        const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite-preview-02-05'; 
+        const modelName =
+          process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite-preview-02-05';
 
         const formatList = (list: OptionCandidate[]) =>
-          list.map((c) => 
-            `${c.symbol} | Trend:${c.data.underlyingChange}% | Spread:${c.data.spread}% | Lev:${c.data.gearing.toFixed(1)}`
-          ).join('\n');
+          list
+            .map(
+              (c) =>
+                `${c.symbol} | Trend:${c.data.underlyingChange}% | Spread:${c.data.spread}% | Lev:${c.data.gearing.toFixed(1)}`,
+            )
+            .join('\n');
 
         const promptText = `
-        Act as an Expert Options Trader (Tehran Stock Exchange).
-        Analyze candidates based on Trend and Spread cost.
+        Act as an Expert Options Trader on the Tehran Stock Exchange.
+        Analyze the following candidates.
         
+        CRITERIA:
+        - High IV (>80%) is risky (expensive).
+        - High Spread (>15%) is bad (illiquid).
+        - Trend should match the direction (Call needs +Trend, Put needs -Trend).
+
         Calls: \n${formatList(topCalls)}
         Puts: \n${formatList(topPuts)}
         
-        Output JSON: { "market_sentiment": "...", "call_suggestion": {...}, "put_suggestion": {...} }
+        RESPONSE FORMAT:
+        You must output ONLY valid JSON. No markdown, no conversational text.
+        Structure:
+        { 
+          "market_sentiment": "Short summary of the market view based on these options.", 
+          "call_suggestion": { "decision": "BUY" or "WAIT", "symbol": "...", "reasoning": "..." }, 
+          "put_suggestion": { "decision": "BUY" or "WAIT", "symbol": "...", "reasoning": "..." } 
+        }
         `;
 
-        const result = await genAI.models.generateContent({ model: modelName, contents: promptText });
-        const cleanText = (result?.text || '').replace(/```json|```/g, '').trim();
-        const parsedAI = JSON.parse(cleanText);
+        const result = await genAI.models.generateContent({
+          model: modelName,
+          contents: promptText,
+        });
+       const rawText = result?.text || '';
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
 
-        aiDecision.market_sentiment = parsedAI.market_sentiment || aiDecision.market_sentiment;
-        
+        if (!jsonMatch) {
+            throw new Error("AI did not return valid JSON structure.");
+        }
+
+        const parsedAI = JSON.parse(jsonMatch[0]);
+
+        aiDecision.market_sentiment =
+          parsedAI.market_sentiment || aiDecision.market_sentiment;
+
         if (parsedAI.call_suggestion) {
-            aiDecision.call_suggestion = { 
-                ...aiDecision.call_suggestion,
-                ...parsedAI.call_suggestion, 
-                ...TALEB_DESCRIPTIONS.CALL 
-            };
-        }
-        
-        if (parsedAI.put_suggestion) {
-            aiDecision.put_suggestion = { 
-                ...aiDecision.put_suggestion,
-                ...parsedAI.put_suggestion, 
-                ...TALEB_DESCRIPTIONS.PUT 
-            };
+          aiDecision.call_suggestion = {
+            ...aiDecision.call_suggestion,
+            ...parsedAI.call_suggestion,
+            ...TALEB_DESCRIPTIONS.CALL,
+          };
         }
 
+        if (parsedAI.put_suggestion) {
+          aiDecision.put_suggestion = {
+            ...aiDecision.put_suggestion,
+            ...parsedAI.put_suggestion,
+            ...TALEB_DESCRIPTIONS.PUT,
+          };
+        }
       } catch (e: any) {
         console.error('AI Error:', e.message);
       }
     }
   }
 
-  const notify_me = superCalls.length > 0 || superPuts.length > 0 || aiDecision.call_suggestion?.decision === 'BUY';
+  const notify_me =
+    superCalls.length > 0 ||
+    superPuts.length > 0 ||
+    aiDecision.call_suggestion?.decision === 'BUY';
 
   // 7. Return with Strict Types
   return {
     notify_me,
     ai_analysis: aiDecision,
     super_candidates: { calls: superCalls, puts: superPuts },
-    definitions: FIELD_DEFINITIONS
+    definitions: FIELD_DEFINITIONS,
   };
 }
