@@ -277,14 +277,14 @@ export async function runTalebStrategy(): Promise<TalebResult> {
           "call_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
-              "entry_price": 0, 
+              "entry_price": {preferred price to buy this item}, 
               "reasoning": "Persian explanation...",
              "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
           }, 
           "put_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
-              "entry_price": 0, 
+              "entry_price": {preferred price to buy this item}, 
               "reasoning": "Persian explanation...",
                  "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
           } 
