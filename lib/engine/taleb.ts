@@ -275,14 +275,16 @@ export async function runTalebStrategy(): Promise<TalebResult> {
           model: modelName,
           contents: promptText,
         });
-       const rawText = result?.text || '';
+        const rawText = result?.text || '';
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
 
         if (!jsonMatch) {
-            throw new Error("AI did not return valid JSON structure.");
+          throw new Error('AI did not return valid JSON structure.');
         }
 
         const parsedAI = JSON.parse(jsonMatch[0]);
+
+        console.log('🐞🐞🐞 parsedAI', parsedAI);
 
         aiDecision.market_sentiment =
           parsedAI.market_sentiment || aiDecision.market_sentiment;
