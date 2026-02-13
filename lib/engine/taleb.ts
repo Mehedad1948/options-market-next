@@ -131,7 +131,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
           key: 'gearing',
           label: FIELD_DEFINITIONS.gearing,
           value: gearing.toFixed(1) + 'x',
-          class: 'text-blue-500 font-bold',
+          class: 'text-blue-500',
         },
         {
           key: 'spread',
