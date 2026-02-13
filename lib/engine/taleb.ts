@@ -250,26 +250,46 @@ export async function runTalebStrategy(): Promise<TalebResult> {
             .join('\n');
 
         const promptText = `
-        Act as an Expert Options Trader on the Tehran Stock Exchange.
-        Analyze the following candidates.
+         Act as an Expert Options Trader (Nassim Taleb Strategy) for the Tehran Stock Exchange.
         
-        CRITERIA:
-        - High IV (>80%) is risky (expensive).
-        - High Spread (>15%) is bad (illiquid).
-        - Trend should match the direction (Call needs +Trend, Put needs -Trend).
-
-        Calls: \n${formatList(topCalls)}
-        Puts: \n${formatList(topPuts)}
+        **Data Key:**
+        - StockTrend: Daily change of underlying asset (Critical for direction).
+        - Spr (Spread): Bid-Ask spread %. High spread (>10%) = High Slippage Risk.
+        - Vol (#Trades): High Volume with low #Trades means block trades (Caution).
+        
+        **Candidates (Already Volume Filtered):**
+        
+        Top Calls (High Leverage/Low IV): 
+        ${formatList(topCalls)}
+        
+        Top Puts (High Leverage/Low IV): 
+        ${formatList(topPuts)}
+        
+        Task:
+        1. Select ONE best Call and ONE best Put.
+        2. **Important:** If StockTrend is negative, be very careful recommending a CALL unless it's a technical reversal.
+        3. **Important:** Avoid options with Spread > 15% unless potential is huge.
         
         RESPONSE FORMAT:
         You must output ONLY valid JSON. No markdown, no conversational text.
-        Structure:
+        Output Schema (Strict JSON):
         { 
-          "market_sentiment": "Short summary of the market view based on these options.", 
-          "call_suggestion": { "decision": "BUY" or "WAIT", "symbol": "...", "reasoning": "..." }, 
-          "put_suggestion": { "decision": "BUY" or "WAIT", "symbol": "...", "reasoning": "..." } 
-        }
-        `;
+          "market_sentiment": "Short Persian summary of liquidity and trend...",
+          "call_suggestion": { 
+              "decision": "BUY"|"WAIT", 
+              "symbol": "...", 
+              "entry_price": 0, 
+              "reasoning": "Persian explanation mentioning trend and spread...",
+              "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
+          }, 
+          "put_suggestion": { 
+              "decision": "BUY"|"WAIT", 
+              "symbol": "...", 
+              "entry_price": 0, 
+              "reasoning": "Persian explanation...",
+              "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
+          } 
+        }`;
 
         const result = await genAI.models.generateContent({
           model: modelName,
@@ -283,8 +303,6 @@ export async function runTalebStrategy(): Promise<TalebResult> {
         }
 
         const parsedAI = JSON.parse(jsonMatch[0]);
-
-        console.log('🐞🐞🐞 parsedAI', parsedAI);
 
         aiDecision.market_sentiment =
           parsedAI.market_sentiment || aiDecision.market_sentiment;
