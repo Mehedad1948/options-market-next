@@ -26,6 +26,8 @@ model TalebSignal {
     // Full list of filtered candidates
     candidates Json
 
+      metadata    Json?   
+
     // Global flag: Did we send this to AT LEAST the admin?
     sentNotification Boolean @default(false) 
 }

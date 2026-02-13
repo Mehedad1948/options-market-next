@@ -73,6 +73,8 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
   // 1. Manage State with URL
   const [signalId, setSignalId] = useQueryState('signalId');
 
+  console.log('👋👋👋', initialData);
+
   // Internal state for fetching
   const [fetchedData, setFetchedData] = useState<any>(null);
   const [loading, setLoading] = useState(false);

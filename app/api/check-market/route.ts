@@ -35,20 +35,27 @@ export async function GET(request: Request) {
       revalidateTag('signals', { expire: 0 });
       const savedSignal = await prisma.talebSignal.create({
         data: {
-          marketStatus: currentStatus, // Keep your existing status logic
+          marketStatus: currentStatus,
 
-          // 1. The General Analysis goes to the main text column
+          // Main Analysis
           aiReasoning: result.ai_analysis.market_sentiment,
 
-          // 2. The Specific Advice goes into the JSON columns
-          // The JSON now contains the 'reasoning' for that specific symbol
+          // Specific AI Advice (Cast to InputJsonValue for Prisma)
           callAdvice: (result.ai_analysis.call_suggestion ??
             null) as unknown as Prisma.InputJsonValue,
           putAdvice: (result.ai_analysis.put_suggestion ??
             null) as unknown as Prisma.InputJsonValue,
 
-          // 3. Candidates logic
+          // Candidates (includes calls/puts arrays with new numeric & pretty data)
           candidates: candidatesPayload as unknown as Prisma.InputJsonValue,
+
+          // 🟢 NEW: Save the Definitions Mapping
+          // This allows the frontend to look up "spread" and show "شکاف خرید و فروش"
+          metadata: {
+            definitions: result.definitions,
+            engine_version: '2.1.0',
+          } as unknown as Prisma.InputJsonValue,
+
           sentNotification: result.notify_me,
         },
       });
