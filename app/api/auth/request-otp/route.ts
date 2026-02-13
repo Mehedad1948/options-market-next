@@ -126,7 +126,7 @@ export async function POST(request: Request) {
       // Telegram Logic
       const botToken = process.env.TELEGRAM_BOT_TOKEN;
       const text = `🔐 *کد ورود به داشبورد*\n\nکد: \`${code}\`\n\nاین کد تا ۲ دقیقه معتبر است.`;
-      console.log('👋👋👋', botToken);
+      console.log('👋👋👋', `${process.env.PROXY_BASE_URL}/telegram/send-message`);
 
       if (user.telegramId) {
         await fetch(`${process.env.PROXY_BASE_URL}/telegram/send-message`, {
