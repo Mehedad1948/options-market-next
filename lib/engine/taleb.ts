@@ -8,9 +8,6 @@ import { GoogleGenAI } from '@google/genai';
 // --- CONFIGURATION ---
 const API_URL = `https://BrsApi.ir/Api/Tsetmc/Option.php?key=${process.env.BRS_API_KEY || 'FreeWsXDnKpRTg7dfqRMzRlYSYeA83FN'}`;
 const RISK_FREE_RATE = 0.3;
-
-// 🟢 NEW: Define Minimum Volume Threshold
-// 1000 is a safe baseline. Anything lower usually has a huge gap between Buy/Sell prices.
 const MIN_VOLUME_THRESHOLD = 1000; 
 
 // --- STATIC TEXTS ---
@@ -19,7 +16,7 @@ const TALEB_DESCRIPTIONS = {
     title: 'استراتژی (Call)',
     profit_scenario: 'رشد شارپ و ناگهانی بازار (Explosive Upside)',
     description:
-      'خرید اختیار خرید با اهرم بالا و نوسان ضمنی (IV) ارزان. مناسب برای شرط‌بندی روی جهش‌های بزرگ قیمت با ریسک محدود (حق بیمه کم).',
+      'خرید اختیار خرید با اهرم بالا و نوسان ضمنی (IV) ارزان. مناسب برای شرط‌بندی روی جهش‌های بزرگ قیمت با ریسک محدود.',
   },
   PUT: {
     title: 'استراتژی (Put)',
@@ -49,38 +46,48 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   // 2. Process Math
   const candidates = rawData
     .map((option: any) => {
-      const spot = cleanNum(option.base_pc);
+      const spot = cleanNum(option.base_pc); // Base Price (Underlying)
       const strike = cleanNum(option.price_strike);
-      const price = cleanNum(option.pc);
+      const price = cleanNum(option.pc); // Current Option Price
       const days = cleanNum(option.day_remain);
       const volume = cleanNum(option.tvol);
+      const openInterest = cleanNum(option.interest_open);
+      
+      // --- 🟢 NEW: Extra Data Points ---
+      const underlyingChange = cleanNum(option.base_pcp); // e.g. 1.5% or -2%
+      const bestBuyPrice = cleanNum(option.pd1); // Best Bid
+      const bestSellPrice = cleanNum(option.po1); // Best Ask
+      
+      // Calculate Spread % (Liquidity Cost)
+      // If spread is > 20%, it's very hard to profit.
+      let spread = 0;
+      if(bestSellPrice > 0) {
+        spread = ((bestSellPrice - bestBuyPrice) / bestSellPrice) * 100;
+      }
 
-      // Basic sanity check before heavy math
-      if (
-        days <= 2 ||
-        price <= 0 ||
-        spot <= 0 ||
-        cleanNum(option.interest_open) < 10
-      )
-        return null;
+      // Basic sanity check
+      if (days <= 2 || price <= 0 || spot <= 0 || openInterest < 10) return null;
 
       const isCall = option.type?.toLowerCase().includes('call');
       const typeStr = isCall ? 'call' : 'put';
       const T = days / 365.0;
 
+      // Calculate Break-Even Point
+      // Call BreakEven = Strike + Price
+      // Put BreakEven = Strike - Price
+      const breakEven = isCall ? (strike + price) : (strike - price);
+      const distToBreakEven = Math.abs((breakEven - spot) / spot) * 100;
+
       let impliedVol = 0;
       try {
         impliedVol = iv.getImpliedVolatility(
-          price,
-          spot,
-          strike,
-          T,
-          RISK_FREE_RATE,
-          typeStr,
+          price, spot, strike, T, RISK_FREE_RATE, typeStr,
         );
       } catch (e) {
         impliedVol = 0;
       }
+      
+      const gearing = spot / price; // Leverage
 
       return {
         symbol: option.l18,
@@ -89,33 +96,37 @@ export async function runTalebStrategy(): Promise<TalebResult> {
           strike,
           days,
           iv: impliedVol || 0,
-          gearing: spot / price,
-          moneyness: strike / spot - 1,
+          gearing: gearing,
+          moneyness: strike / spot - 1, // Negative for OTM Call
           type: typeStr,
-          openInterest: cleanNum(option.interest_open),
+          openInterest: openInterest,
           volume: volume,
+          
+          // 🟢 NEW: Useful Metrics for Frontend & AI
+          // These are now available in your frontend via `signal.data.spread`, etc.
+          spread: parseFloat(spread.toFixed(2)), 
+          underlyingChange: underlyingChange, // Trend of the stock today
+          breakEvenPrice: breakEven,
+          distToBreakEven: parseFloat(distToBreakEven.toFixed(1)), // % distance
+          tradesCount: cleanNum(option.tno) // Number of trades
         },
       };
     })
     .filter(Boolean);
 
-  // 3. Filter
+  // 3. Filter Logic
   const filtered = candidates.filter((c: any) => {
     const d = c.data;
 
-    // 🟢 UPDATED: Strict Volume Check
-    // If volume is < 1000, the price is likely not real or the spread is too high.
     if (d.volume < MIN_VOLUME_THRESHOLD) return false; 
-
-    // Open Interest check (keep or increase to 500)
     if (d.openInterest < 100) return false;
 
-    if (d.type === 'call' && (d.moneyness < 0.05 || d.moneyness > 0.4))
-      return false;
-    if (d.type === 'put' && (d.moneyness > -0.05 || d.moneyness < -0.4))
-      return false;
+    // Filter out extreme spreads (if spread > 30%, it's a trap)
+    if (d.spread > 30) return false;
+
+    if (d.type === 'call' && (d.moneyness < 0.05 || d.moneyness > 0.4)) return false;
+    if (d.type === 'put' && (d.moneyness > -0.05 || d.moneyness < -0.4)) return false;
     
-    // Price cap and IV sane range
     if (d.price > 8000 || d.iv <= 0 || d.iv > 2.0) return false;
     
     return true;
@@ -141,7 +152,6 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     
   const superCandidates = [...superCalls, ...superPuts];
 
-  // Get Top list for AI analysis
   const topCalls = filtered
     .filter((c: any) => c.data.type === 'call')
     .sort(sortFn)
@@ -154,20 +164,8 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
   // Default State
   const aiDecision: any = {
-    call_suggestion: {
-      decision: 'WAIT',
-      symbol: null,
-      max_entry_price: 0,
-      reasoning: '',
-      tags: {},
-    },
-    put_suggestion: {
-      decision: 'WAIT',
-      symbol: null,
-      max_entry_price: 0,
-      reasoning: '',
-      tags: {},
-    },
+    call_suggestion: { decision: 'WAIT', symbol: null, max_entry_price: 0, reasoning: '', tags: {} },
+    put_suggestion: { decision: 'WAIT', symbol: null, max_entry_price: 0, reasoning: '', tags: {} },
     market_sentiment: 'No significant data for analysis.',
   };
 
@@ -181,22 +179,26 @@ export async function runTalebStrategy(): Promise<TalebResult> {
     } else {
       try {
         const genAI = new GoogleGenAI({ apiKey });
-        // Use flash-lite or flash depending on your access/tier
         const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite-preview-02-05'; 
 
+        // 🟢 UPDATED: Sending richer data to AI
         const formatList = (list: any[]) =>
           list
             .map(
               (c) =>
-                `${c.symbol} | Vol:${c.data.volume} | P:${c.data.price} | Lev:${c.data.gearing.toFixed(1)} | IV:${(c.data.iv * 100).toFixed(0)}%`,
+                `${c.symbol} | StockTrend:${c.data.underlyingChange}% | Vol:${c.data.volume} (#${c.data.tradesCount}) | Spr:${c.data.spread}% | Lev:${c.data.gearing.toFixed(1)} | IV:${(c.data.iv * 100).toFixed(0)}%`
             )
             .join('\n');
 
         const promptText = `
-        Act as an Expert Options Trader (Nassim Taleb Strategy).
-        Analyze Iranian Options Market Data below.
+        Act as an Expert Options Trader (Nassim Taleb Strategy) for the Tehran Stock Exchange.
         
-        **Note: Candidates have already been filtered for minimum volume (> ${MIN_VOLUME_THRESHOLD}).**
+        **Data Key:**
+        - StockTrend: Daily change of underlying asset (Critical for direction).
+        - Spr (Spread): Bid-Ask spread %. High spread (>10%) = High Slippage Risk.
+        - Vol (#Trades): High Volume with low #Trades means block trades (Caution).
+        
+        **Candidates (Already Volume Filtered):**
         
         Top Calls (High Leverage/Low IV): 
         ${formatList(topCalls)}
@@ -205,18 +207,18 @@ export async function runTalebStrategy(): Promise<TalebResult> {
         ${formatList(topPuts)}
         
         Task:
-        1. Select ONE best Call and ONE best Put based on Risk/Reward.
-        2. **STRICT JSON OUTPUT ONLY**.
-        3. Fill 'tags' based on data.
+        1. Select ONE best Call and ONE best Put.
+        2. **Important:** If StockTrend is negative, be very careful recommending a CALL unless it's a technical reversal.
+        3. **Important:** Avoid options with Spread > 15% unless potential is huge.
         
-        Output Schema:
+        Output Schema (Strict JSON):
         { 
-          "market_sentiment": "Short Persian summary...",
+          "market_sentiment": "Short Persian summary of liquidity and trend...",
           "call_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
               "entry_price": 0, 
-              "reasoning": "Persian explanation...",
+              "reasoning": "Persian explanation mentioning trend and spread...",
               "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
           }, 
           "put_suggestion": { 
@@ -257,8 +259,6 @@ export async function runTalebStrategy(): Promise<TalebResult> {
             strategy_desc: TALEB_DESCRIPTIONS.PUT.description,
           };
         }
-
-        console.log('✅ AI Analysis Complete');
       } catch (e: any) {
         console.error('🐞 AI Failed Error:', e.message);
         aiDecision.market_sentiment = 'Error in AI generation';
@@ -274,7 +274,6 @@ export async function runTalebStrategy(): Promise<TalebResult> {
   return {
     notify_me,
     ai_analysis: aiDecision,
-  super_candidates: { calls: superCalls, puts: superPuts },
+    super_candidates: { calls: superCalls, puts: superPuts },
   };
 }
-
