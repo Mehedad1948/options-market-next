@@ -9,10 +9,7 @@ const formatNumber = (num: number) => {
  * Generates the HTML message for Telegram notifications based on TalebResult
  * @param result - The full TalebResult object (do not destructure input)
  */
-export const generateTelegramMessage = (
-  result: TalebResult, 
-): string => {
-  
+export const generateTelegramMessage = (result: TalebResult): string => {
   // 1. Get Dashboard URL from Environment Variables
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
   // Ensure no double slashes if the env var ends with /
@@ -30,7 +27,7 @@ export const generateTelegramMessage = (
   const opportunityCount = (isCallBuy ? 1 : 0) + (isPutBuy ? 1 : 0);
 
   // If no opportunities, return empty string (or handle as needed)
-  if (opportunityCount === 0) return ""; 
+  if (opportunityCount === 0) return '';
 
   // 4. Build the Header
   let message = `<b>🦅 هشدار آپشن یار</b>\n\n`;
@@ -40,22 +37,22 @@ export const generateTelegramMessage = (
   // 5. Add Call Section (if BUY)
   if (isCallBuy) {
     // Use the specific option symbol if available, otherwise fallback to underlying
-    const symbolDisplay = call.symbol ; 
-    
+    const symbolDisplay = call.symbol;
+
     message += `<b>🚀 سیگنال خرید (Call):</b> <code>${symbolDisplay}</code>\n`;
     // Display the recommended entry price from the suggestion
-    message += `<b>قیمت خرید:</b> ${formatNumber(call.entry_price)} ریال\n`;
+    message += `<b>قیمت خرید:</b> ${call.entry_price ? formatNumber(call.entry_price) : 'ناموجود'} ریال\n`;
     message += `<i>${call.reasoning}</i>\n\n`;
   }
 
   // 6. Add Put Section (if BUY) - Using ⬇️ icon
   if (isPutBuy) {
     // Use the specific option symbol if available
-    const symbolDisplay = put.symbol ;
+    const symbolDisplay = put.symbol;
 
     message += `<b>⬇️ سیگنال خرید (Put):</b> <code>${symbolDisplay}</code>\n`;
     // Display the recommended entry price from the suggestion
-    message += `<b>قیمت خرید:</b> ${formatNumber(put.entry_price)} ریال\n`;
+    message += `<b>قیمت خرید:</b> ${put.entry_price ? formatNumber(put.entry_price) : 'ناموجود'} ریال\n`;
     message += `<i>${put.reasoning}</i>\n\n`;
   }
 
