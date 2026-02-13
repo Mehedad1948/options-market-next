@@ -245,7 +245,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
           list
             .map(
               (c) =>
-                `${c.symbol} | Trend:${c.data.underlyingChange}% | Spread:${c.data.spread}% | Lev:${c.data.gearing.toFixed(1)}`,
+                `Sym:${c.symbol} | Trend:${c.data.underlyingChange}% | Spread:${c.data.spread}% | IV:${(c.data.iv * 100).toFixed(0)}%`,
             )
             .join('\n');
 
@@ -253,48 +253,51 @@ export async function runTalebStrategy(): Promise<TalebResult> {
          Act as an Expert Options Trader (Nassim Taleb Strategy) for the Tehran Stock Exchange.
         
         **Data Key:**
-        - StockTrend: Daily change of underlying asset (Critical for direction).
-        - Spr (Spread): Bid-Ask spread %. High spread (>10%) = High Slippage Risk.
-        - Vol (#Trades): High Volume with low #Trades means block trades (Caution).
+        - StockTrend: Daily change of underlying asset.
+        - Spr (Spread): Bid-Ask spread %. >10% is risky.
+        - IV: Implied Volatility. >80% is expensive.
         
-        **Candidates (Already Volume Filtered):**
-        
-        Top Calls (High Leverage/Low IV): 
+        **Candidates:**
+        Calls: 
         ${formatList(topCalls)}
         
-        Top Puts (High Leverage/Low IV): 
+        Puts: 
         ${formatList(topPuts)}
         
         Task:
         1. Select ONE best Call and ONE best Put.
-        2. **Important:** If StockTrend is negative, be very careful recommending a CALL unless it's a technical reversal.
-        3. **Important:** Avoid options with Spread > 15% unless potential is huge.
+        2. If StockTrend is negative, avoid Calls. If positive, avoid Puts.
+        3. Prioritize Low IV and Low Spread.
         
         RESPONSE FORMAT:
         You must output ONLY valid JSON. No markdown, no conversational text.
         Output Schema (Strict JSON):
         { 
-          "market_sentiment": "Short Persian summary of liquidity and trend...",
+          "market_sentiment": "Short Persian summary...",
           "call_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
               "entry_price": 0, 
-              "reasoning": "Persian explanation mentioning trend and spread...",
-              "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
+              "reasoning": "Persian explanation...",
+             "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
           }, 
           "put_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
               "entry_price": 0, 
               "reasoning": "Persian explanation...",
-              "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
+                 "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
           } 
         }`;
 
         const result = await genAI.models.generateContent({
           model: modelName,
           contents: promptText,
+          // Force JSON response from API if supported
+          config: { responseMimeType: 'application/json' },
         });
+
+        // Strict Parsing with Regex to fix "Unexpected token" errors
         const rawText = result?.text || '';
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
 
@@ -304,26 +307,60 @@ export async function runTalebStrategy(): Promise<TalebResult> {
 
         const parsedAI = JSON.parse(jsonMatch[0]);
 
+        // 🟢 HELPERS: Enrich Suggestion with Real Data
+        // This function finds the real candidate object and attaches 'pretty_data' to the suggestion
+        const enrichSuggestion = (
+          suggestion: any,
+          candidates: OptionCandidate[],
+        ) => {
+          if (!suggestion?.symbol) return suggestion;
+
+          // Find the candidate (Look in the full filtered list to be safe)
+          const found = candidates.find((c) => c.symbol === suggestion.symbol);
+
+          if (found) {
+            return {
+              ...suggestion,
+              // Inject the pre-formatted UI data (definitions + values)
+              candidate_details: found.pretty_data,
+              // Inject exact math data if needed by frontend
+              math_data: found.data,
+            };
+          }
+          return suggestion;
+        };
+
         aiDecision.market_sentiment =
           parsedAI.market_sentiment || aiDecision.market_sentiment;
 
+        // Process Call Suggestion
         if (parsedAI.call_suggestion) {
+          const enrichedCall = enrichSuggestion(
+            parsedAI.call_suggestion,
+            filtered,
+          );
           aiDecision.call_suggestion = {
             ...aiDecision.call_suggestion,
-            ...parsedAI.call_suggestion,
+            ...enrichedCall,
             ...TALEB_DESCRIPTIONS.CALL,
           };
         }
 
+        // Process Put Suggestion
         if (parsedAI.put_suggestion) {
+          const enrichedPut = enrichSuggestion(
+            parsedAI.put_suggestion,
+            filtered,
+          );
           aiDecision.put_suggestion = {
             ...aiDecision.put_suggestion,
-            ...parsedAI.put_suggestion,
+            ...enrichedPut,
             ...TALEB_DESCRIPTIONS.PUT,
           };
         }
       } catch (e: any) {
         console.error('AI Error:', e.message);
+        aiDecision.market_sentiment = `AI Service Error: ${e.message}`;
       }
     }
   }
