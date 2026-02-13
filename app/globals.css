@@ -1,11 +1,11 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-  .dark {
-    --background: 15 23 42;    /* Slate 900 */
-    --foreground: 255 255 255; /* White */
-  }
+.dark {
+  --background: 15 23 42; /* Slate 900 */
+  --foreground: 255 255 255; /* White */
+}
 
-  @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 body {
   background: var(--background);
@@ -13,16 +13,31 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+button {
+  cursor: pointer;
+}
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 @keyframes float-delayed {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 .animate-float {
   animation: float 6s ease-in-out infinite;
@@ -31,4 +46,3 @@ body {
   animation: float-delayed 5s ease-in-out infinite;
   animation-delay: 1s;
 }
-

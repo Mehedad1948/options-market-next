@@ -153,7 +153,7 @@ export function SignalRow({
   const handleRowClick = () => {
     if (hasSuggestion) {
       onClick(fullSignalData); // Pass the data up to the parent
-      setSignalId(String(signal.id)); // Set the URL param for styling
+       setSignalId(String(signal.id), { history: 'push' }); 
     }
   };
 
@@ -161,7 +161,7 @@ export function SignalRow({
   const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation(); // Prevent the row's onClick from firing twice
     onClick(fullSignalData);
-    setSignalId(String(signal.id));
+    setSignalId(String(signal.id), { history: 'push' }); 
   };
 
   return (

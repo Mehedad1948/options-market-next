@@ -188,13 +188,13 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
 
     const accentColor = isCall
       ? 'text-emerald-600 dark:text-emerald-400'
-      : 'text-rose-600 dark:text-rose-400';
+      : 'text-purple-600 dark:text-purple-400';
     const borderColor = isCall
       ? 'border-emerald-200 dark:border-emerald-900'
-      : 'border-rose-200 dark:border-rose-900';
+      : 'border-purple-200 dark:border-purple-900';
     const bgHeader = isCall
       ? 'bg-emerald-50 dark:bg-emerald-900/10'
-      : 'bg-rose-50 dark:bg-rose-900/10';
+      : 'bg-purple-50 dark:bg-purple-900/10';
 
     return (
       <div
@@ -302,8 +302,12 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
       className='fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200'
       style={{ zIndex: 9999 }}
     >
+      <div
+        onClick={onClose}
+        className='w-full h-full absolute z-0 top-0 left-0'
+      ></div>
       {/* Container */}
-      <div className='bg-white dark:bg-gray-950 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 relative'>
+      <div className='bg-white  z-10 dark:bg-gray-950 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 relative'>
         {/* --- Header --- */}
         <div className='flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-10'>
           <div className='flex flex-col gap-1'>

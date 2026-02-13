@@ -16,13 +16,13 @@ const MIN_VOLUME_THRESHOLD = 1000;
 // --- STATIC TEXTS ---
 const TALEB_DESCRIPTIONS = {
   CALL: {
-    title: 'استراتژی طالب (Call)',
+    title: 'استراتژی (Call)',
     profit_scenario: 'رشد شارپ و ناگهانی بازار (Explosive Upside)',
     description:
       'خرید اختیار خرید با اهرم بالا و نوسان ضمنی (IV) ارزان. مناسب برای شرط‌بندی روی جهش‌های بزرگ قیمت با ریسک محدود (حق بیمه کم).',
   },
   PUT: {
-    title: 'استراتژی طالب (Put)',
+    title: 'استراتژی (Put)',
     profit_scenario: 'ریزش سنگین یا سقوط بازار (Market Crash)',
     description:
       'خرید اختیار فروش به عنوان بیمه پرتفوی یا شرط‌بندی روی سقوط. هدف کسب سود نامتقارن از ترس بازار و افزایش IV است.',
