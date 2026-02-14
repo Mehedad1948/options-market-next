@@ -27,7 +27,7 @@ export function useSignalStream(userSettings: UserSettings | null) {
       // 3. Create Notification
       const notification = new Notification(title, {
         body: body,
-        icon: '/icons/icon-192x192.png', // Add your app logo path here
+        icon: '/notif-icon.jpg', // Add your app logo path here
         dir: 'rtl', // Important for Persian
         lang: 'fa-IR',
         tag: 'signal-alert', // Prevents stacking too many notifications

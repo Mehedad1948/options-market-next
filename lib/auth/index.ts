@@ -35,7 +35,6 @@ export async function loginUser(userId: string, telegramId: string) {
 
 export async function getSession() {
   const session = (await cookies()).get('session')?.value;
-  console.log('❤️❤️❤️', session);
 
   if (!session) return null;
   return await verifySession(session);

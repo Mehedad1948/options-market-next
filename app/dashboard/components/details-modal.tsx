@@ -73,8 +73,6 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
   // 1. Manage State with URL
   const [signalId, setSignalId] = useQueryState('signalId');
 
-  console.log('👋👋👋', initialData);
-
   // Internal state for fetching
   const [fetchedData, setFetchedData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -151,12 +149,12 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
     return (
       <div className='mt-6'>
         <h4
-          className={`font-bold mb-3 flex items-center gap-2 text-lg ${headerColor}`}
+          className={`font-bold mb-3 flex items-center gap-2 text-base md:text-lg ${headerColor}`}
         >
-          <HeaderIcon className='w-5 h-5' />
+          <HeaderIcon className='w-4 h-4 md:w-5 md:h-5' />
           {title}
         </h4>
-        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3'>
+        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3'>
           {items.map((item: any, index: number) => {
             const symbol = item.symbol || '---';
             const price = item.data?.price || item.price;
@@ -164,14 +162,14 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
             return (
               <div
                 key={index}
-                className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 flex flex-col items-center justify-center text-center transition-all shadow-sm ${itemBorderHover}`}
+                className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-2 md:p-3 flex flex-col items-center justify-center text-center transition-all shadow-sm ${itemBorderHover}`}
               >
-                <span className='font-black text-gray-800 dark:text-gray-100 font-mono text-lg mb-1 tracking-tight'>
+                <span className='font-black text-gray-800 dark:text-gray-100 font-mono text-base md:text-lg mb-1 tracking-tight'>
                   {symbol}
                 </span>
                 {price !== undefined && (
-                  <div className='text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 font-medium bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded-md'>
-                    <span className='text-xs'>ریال</span>
+                  <div className='text-xs md:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 font-medium bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded-md'>
+                    <span className='text-[10px] md:text-xs'>ریال</span>
                     {formatPrice(price)}
                   </div>
                 )}
@@ -200,61 +198,66 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
 
     return (
       <div
-        className={`w-full border rounded-2xl overflow-hidden flex flex-col ${borderColor} dark:bg-gray-900/50 shadow-sm mb-6`}
+        className={`w-full border rounded-2xl overflow-hidden flex flex-col ${borderColor} dark:bg-gray-900/50 shadow-sm mb-4 md:mb-6`}
       >
+        {/* Card Header */}
         <div
-          className={`p-4 ${bgHeader} border-b ${borderColor} flex justify-between items-center`}
+          className={`p-3 md:p-4 ${bgHeader} border-b ${borderColor} flex justify-between items-center`}
         >
           <div
-            className={`flex items-center gap-2 font-bold text-lg ${accentColor}`}
+            className={`flex items-center gap-2 font-bold text-base md:text-lg ${accentColor}`}
           >
             {isCall ? (
-              <TrendingUp className='w-6 h-6' />
+              <TrendingUp className='w-5 h-5 md:w-6 md:h-6' />
             ) : (
-              <TrendingDown className='w-6 h-6' />
+              <TrendingDown className='w-5 h-5 md:w-6 md:h-6' />
             )}
             {advice.title || `استراتژی ${type}`}
           </div>
           <span
-            className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${isBuy ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'}`}
+            className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-xs md:text-sm font-bold shadow-sm ${isBuy ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'}`}
           >
             {advice.decision}
           </span>
         </div>
 
-        <div className='p-5 space-y-6'>
-          <div className='flex justify-between items-end border-b border-gray-100 dark:border-gray-800 pb-5'>
+        {/* Card Body */}
+        <div className='p-3 md:p-5 space-y-4 md:space-y-6'>
+          
+          {/* Price & Symbol Row */}
+          <div className='flex justify-between items-end border-b border-gray-100 dark:border-gray-800 pb-3 md:pb-5'>
             <div>
-              <p className='text-sm text-gray-500 mb-1'>نماد منتخب</p>
-              <p className='text-xl font-black text-gray-900 dark:text-white font-mono tracking-tighter'>
+              <p className='text-xs md:text-sm text-gray-500 mb-1'>نماد منتخب</p>
+              <p className='text-lg md:text-xl font-black text-gray-900 dark:text-white font-mono tracking-tighter'>
                 {advice.symbol || '---'}
               </p>
             </div>
             <div className='text-left'>
-              <p className='text-sm text-gray-500 mb-1'>قیمت ورود</p>
-              <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+              <p className='text-xs md:text-sm text-gray-500 mb-1'>قیمت ورود</p>
+              <p className='text-lg md:text-2xl font-bold text-gray-900 dark:text-white'>
                 {formatPrice(advice.entry_price)}{' '}
-                <span className='text-sm font-normal text-gray-400'>ریال</span>
+                <span className='text-xs md:text-sm font-normal text-gray-400'>ریال</span>
               </p>
             </div>
           </div>
 
+          {/* Tags Grid */}
           {advice.tags && (
-            <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4'>
               {Object.entries(advice.tags).map(([key, value]: any) => {
                 const config = TAG_CONFIG[key] || TAG_CONFIG.default;
                 const Icon = config.icon;
                 return (
                   <div
                     key={key}
-                    className={`p-3 rounded-xl border flex flex-col gap-2 ${getTagStyle(key, value)}`}
+                    className={`p-2 md:p-3 rounded-xl border flex flex-col gap-1.5 md:gap-2 ${getTagStyle(key, value)}`}
                   >
-                    <div className='flex items-center gap-2 opacity-80'>
-                      <Icon className='w-4 h-4' />
-                      <span className='text-xs font-bold'>{config.label}</span>
+                    <div className='flex items-center gap-1.5 opacity-80'>
+                      <Icon className='w-3.5 h-3.5 md:w-4 md:h-4' />
+                      <span className='text-[10px] md:text-xs font-bold'>{config.label}</span>
                     </div>
                     <span
-                      className='text-sm font-black text-right truncate leading-tight'
+                      className='text-xs md:text-sm font-black text-right truncate leading-tight'
                       title={value}
                     >
                       {value}
@@ -265,32 +268,66 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
             </div>
           )}
 
+          {/* Scenarios / Strategy Desc */}
           {(advice.profit_scenario || advice.strategy_desc) && (
-            <div className='bg-gray-50 dark:bg-gray-800/40 p-4 rounded-xl text-sm space-y-3 border border-gray-100 dark:border-gray-800'>
+            <div className='bg-gray-50 dark:bg-gray-800/40 p-3 md:p-4 rounded-xl text-xs md:text-sm space-y-2 md:space-y-3 border border-gray-100 dark:border-gray-800'>
               {advice.profit_scenario && (
                 <div className='flex gap-2 text-amber-600 dark:text-amber-400 items-start'>
-                  <AlertTriangle className='w-5 h-5 shrink-0 mt-0.5' />
-                  <span className='font-bold text-base'>
+                  <AlertTriangle className='w-4 h-4 md:w-5 md:h-5 shrink-0 mt-0.5' />
+                  <span className='font-bold text-sm md:text-base'>
                     سناریو سود: {advice.profit_scenario}
                   </span>
                 </div>
               )}
               {advice.strategy_desc && (
-                <p className='text-gray-600 dark:text-gray-300 text-base leading-7 text-justify'>
+                <p className='text-gray-600 dark:text-gray-300 text-sm md:text-base leading-6 md:leading-7 text-justify'>
                   {advice.strategy_desc}
                 </p>
               )}
             </div>
           )}
 
+          {/* Reasoning Text */}
           {advice.reasoning && (
             <div>
-              <p className='text-sm font-bold text-gray-400 mb-2'>
+              <p className='text-xs md:text-sm font-bold text-gray-400 mb-1.5 md:mb-2'>
                 تحلیل تکنیکال:
               </p>
-              <p className='text-base text-gray-800 dark:text-gray-200 leading-8 text-justify font-medium'>
+              <p className='text-sm md:text-base text-gray-800 dark:text-gray-200 leading-7 md:leading-8 text-justify font-medium'>
                 {advice.reasoning}
               </p>
+            </div>
+          )}
+
+          {/* --- NEW: Enriched Candidate Details (Grid Layout) --- */}
+          {advice.candidate_details && advice.candidate_details.length > 0 && (
+            <div className='grid grid-cols-2 md:grid-cols-3 gap-2 mt-3 mb-1'>
+              {advice.candidate_details.map(
+                (item: {
+                  key: string;
+                  class: string;
+                  label: string;
+                  value: string;
+                }) => (
+                  <div
+                    key={item.key}
+                    className='flex flex-col justify-center bg-gray-50 rounded px-2 py-1.5 border border-gray-100 hover:bg-gray-100 transition-colors'
+                  >
+                    {/* Label: Tiny text for mobile (10px), small for desktop */}
+                    <span className='text-[10px] md:text-xs text-gray-500 font-medium truncate mb-0.5'>
+                      {item.label}
+                    </span>
+
+                    {/* Value: Bold mono, force LTR for numbers */}
+                    <span
+                      className={`text-xs md:text-sm font-bold font-mono tracking-tight ${item.class}`}
+                      dir='ltr' 
+                    >
+                      {item.value}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
           )}
         </div>
@@ -301,26 +338,28 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
   // --- Main Return (JSX) ---
   return (
     <div
-      className='fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200'
+      className='fixed inset-0 flex items-center justify-center p-2 md:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200'
       style={{ zIndex: 9999 }}
     >
       <div
         onClick={onClose}
         className='w-full h-full absolute z-0 top-0 left-0'
       ></div>
-      {/* Container */}
-      <div className='bg-white  z-10 dark:bg-gray-950 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 relative'>
+      
+      {/* Container Card */}
+      <div className='bg-white z-10 dark:bg-gray-950 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 relative'>
+        
         {/* --- Header --- */}
-        <div className='flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-10'>
+        <div className='flex items-center justify-between p-4 md:p-5 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-10'>
           <div className='flex flex-col gap-1'>
-            <h3 className='text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-              <Info className='w-7 h-7 text-blue-600' />
+            <h3 className='text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
+              <Info className='w-5 h-5 md:w-7 md:h-7 text-blue-600' />
               جزئیات و تحلیل استراتژی
             </h3>
             {/* DATE BADGE */}
             {!loading && displayData?.createdAt && (
-              <div className='flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 mr-9'>
-                <Clock className='w-3.5 h-3.5' />
+              <div className='flex items-center gap-1.5 text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400 mr-7 md:mr-9'>
+                <Clock className='w-3 h-3 md:w-3.5 md:h-3.5' />
                 <span>{formatPersianDate(displayData.createdAt)}</span>
               </div>
             )}
@@ -328,22 +367,22 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
 
           <button
             onClick={onClose}
-            className='p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors'
+            className='p-1.5 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors'
           >
-            <X className='w-6 h-6 text-gray-500' />
+            <X className='w-5 h-5 md:w-6 md:h-6 text-gray-500' />
           </button>
         </div>
 
         {/* --- Content Area --- */}
         <div
-          className='p-6 md:p-8 overflow-y-auto space-y-8 text-right bg-gray-50/50 dark:bg-black/20 flex-grow'
+          className='p-3 md:p-8 overflow-y-auto space-y-4 md:space-y-8 text-right bg-gray-50/50 dark:bg-black/20 flex-grow'
           dir='rtl'
         >
           {/* Loading State */}
           {loading && (
             <div className='flex flex-col items-center justify-center h-64 gap-4 text-gray-500'>
-              <Loader2 className='w-10 h-10 animate-spin text-blue-600' />
-              <p className='text-sm font-medium animate-pulse'>
+              <Loader2 className='w-8 h-8 md:w-10 md:h-10 animate-spin text-blue-600' />
+              <p className='text-xs md:text-sm font-medium animate-pulse'>
                 در حال دریافت اطلاعات...
               </p>
             </div>
@@ -352,11 +391,11 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
           {/* Error State */}
           {!loading && error && (
             <div className='flex flex-col items-center justify-center h-64 gap-4 text-red-500'>
-              <AlertTriangle className='w-10 h-10' />
-              <p>{error}</p>
+              <AlertTriangle className='w-8 h-8 md:w-10 md:h-10' />
+              <p className="text-sm md:text-base">{error}</p>
               <button
                 onClick={onClose}
-                className='text-blue-600 underline text-sm'
+                className='text-blue-600 underline text-xs md:text-sm'
               >
                 بستن
               </button>
@@ -368,11 +407,11 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
             <>
               {/* Section 1: General Market Sentiment */}
               {displayData.aiReasoning && (
-                <div className='bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-800/50 shadow-sm'>
-                  <h4 className='text-blue-800 dark:text-blue-300 font-bold mb-4 flex items-center gap-2 text-lg'>
+                <div className='bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-3 md:p-6 rounded-2xl border border-blue-100 dark:border-blue-800/50 shadow-sm'>
+                  <h4 className='text-blue-800 dark:text-blue-300 font-bold mb-2 md:mb-4 flex items-center gap-2 text-base md:text-lg'>
                     🧠 تحلیل کلی بازار (Market Sentiment)
                   </h4>
-                  <p className='text-base text-gray-800 dark:text-gray-100 leading-9 text-justify font-medium'>
+                  <p className='text-sm md:text-base text-gray-800 dark:text-gray-100 leading-7 md:leading-9 text-justify font-medium'>
                     {displayData.aiReasoning}
                   </p>
                 </div>
@@ -380,17 +419,19 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
 
               {/* Section 2: Strategy Cards */}
               <div className='flex flex-col gap-2'>
-                {renderAdviceCard('CALL', displayData.callAdvice)}
-                {renderAdviceCard('PUT', displayData.putAdvice)}
+                {displayData.callAdvice.decision !== 'WAIT' &&
+                  renderAdviceCard('CALL', displayData.callAdvice)}
+                {displayData.putAdvice.decision !== 'WAIT' &&
+                  renderAdviceCard('PUT', displayData.putAdvice)}
               </div>
 
               {/* Section 3: Candidates Lists */}
               {(displayData.candidates?.calls?.length > 0 ||
                 displayData.candidates?.puts?.length > 0) && (
-                <div className='border-t border-gray-200 dark:border-gray-800 pt-8'>
-                  <div className='flex items-center gap-2 mb-6 opacity-70'>
-                    <Search className='w-6 h-6' />
-                    <h3 className='text-base font-bold text-gray-900 dark:text-white'>
+                <div className='border-t border-gray-200 dark:border-gray-800 pt-4 md:pt-8'>
+                  <div className='flex items-center gap-2 mb-3 md:mb-6 opacity-70'>
+                    <Search className='w-5 h-5 md:w-6 md:h-6' />
+                    <h3 className='text-sm md:text-base font-bold text-gray-900 dark:text-white'>
                       بررسی سایر نمادها
                     </h3>
                   </div>
@@ -412,10 +453,10 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
         </div>
 
         {/* --- Footer --- */}
-        <div className='p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 flex justify-end gap-3 sticky bottom-0'>
+        <div className='p-3 md:p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 flex justify-end gap-3 sticky bottom-0'>
           <button
             onClick={onClose}
-            className='px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl text-base font-bold hover:opacity-90 transition-all shadow-lg hover:shadowxl transform active:scale-95'
+            className='px-6 py-2.5 md:px-8 md:py-3 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl text-sm md:text-base font-bold hover:opacity-90 transition-all shadow-lg hover:shadowxl transform active:scale-95'
           >
             بستن پنجره
           </button>

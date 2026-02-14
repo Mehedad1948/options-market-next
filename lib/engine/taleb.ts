@@ -268,6 +268,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
         1. Select ONE best Call and ONE best Put.
         2. If StockTrend is negative, avoid Calls. If positive, avoid Puts.
         3. Prioritize Low IV and Low Spread.
+        4. If decision for one type is to WAIT, DON'T  Suggest symbol for that type
         
         RESPONSE FORMAT:
         You must output ONLY valid JSON. No markdown, no conversational text.
@@ -279,14 +280,14 @@ export async function runTalebStrategy(): Promise<TalebResult> {
               "symbol": "...", 
               "entry_price": {preferred price to buy this item}, 
               "reasoning": "Persian explanation...",
-             "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
+             "tags": { "leverage_tag": "{SEMANTIC TAG IN PERSIAN}", "iv_status": ".{SEMANTIC TAG IN PERSIAN}", "risk_level": "{SEMANTIC TAG IN PERSIAN}" }
           }, 
           "put_suggestion": { 
               "decision": "BUY"|"WAIT", 
               "symbol": "...", 
               "entry_price": {preferred price to buy this item}, 
-              "reasoning": "Persian explanation...",
-                 "tags": { "leverage_tag": "...", "iv_status": "...", "risk_level": "..." }
+              "reasoning": "Persian explanation{SEMANTIC TAG IN PERSIAN}",
+                 "tags": { "leverage_tag": "{SEMANTIC TAG IN PERSIAN}", "iv_status": "{SEMANTIC TAG IN PERSIAN}", "risk_level": "{SEMANTIC TAG IN PERSIAN}" }
           } 
         }`;
 
