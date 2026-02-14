@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'fa_IR',
-    url: 'https://optionyar.ir', // Replace with your actual domain
+    url: 'https://opyar.ir', // Replace with your actual domain
     title: 'آپشن‌یار | ریسک محدود، پاداش نامحدود',
     description:
       'ابزار تخصصی برای کشف «قوی سیاه» و فرصت‌های پنهان بازار. به جای درگیری با نوسانات خرد، در موقعیت‌هایی با پتانسیل رشد نامحدود و بلندمدت سرمایه‌گذاری کنید.',
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     // Add an image to your public folder named 'og-image.jpg' (1200x630px is best)
     images: [
       {
-        url: '/hero.png',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'OptionYar Dashboard Preview',
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
     title: 'آپشن‌یار | ریسک محدود، پاداش نامحدود',
     description:
       'داشبورد حرفه‌ای برای معامله‌گران اختیار معامله. جایی که نوسان دوست شماست.',
-    images: ['/hero.png'], // Reuses the OG image
+    images: ['/og-image.png'], // Reuses the OG image
   },
 
   // 7. Robots: Ensures Google indexes the page

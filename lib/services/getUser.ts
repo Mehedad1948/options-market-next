@@ -11,7 +11,6 @@ import { unstable_cache } from 'next/cache';
 // --------------------------------------------------------------------------
 async function fetchUserFromDb(userId: string) {
   // RED LOG: Indicates a slow/expensive DB operation
-  console.log(`\x1b[31m🔥 [LAYER 1: DB] Cache MISS. Hitting Prisma for user: ${userId}\x1b[0m`);
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -29,7 +28,6 @@ async function fetchUserFromDb(userId: string) {
 // --------------------------------------------------------------------------
 async function getUserDataCache(userId: string) {
   // YELLOW LOG: Indicates we are asking Next.js for cached data
-  console.log(`\x1b[33m📦 [LAYER 2: DATA CACHE] Initializing unstable_cache for: ${userId}\x1b[0m`);
 
   // We use the wrapper pattern here to safely inject 'userId' into tags
   const cachedFn = unstable_cache(
@@ -57,7 +55,6 @@ export const getUser = cache(async () => {
 
   // CYAN LOG: This runs every time you call getUser() in your components.
   // If you see 3 of these logs but only 1 YELLOW/RED log, Memoization is working.
-  console.log(`\x1b[36m⚡ [LAYER 3: MEMO] getUser() called for: ${session.userId}\x1b[0m`);
 
   return getUserDataCache(session.userId);
 });
