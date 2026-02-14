@@ -1,19 +1,70 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import { runTalebStrategy } from '@/lib/engine/taleb';
-import { NotificationService } from '@/lib/services/telegram'; // Ensure this service has the broadcastEvent method we added
+import { NotificationService } from '@/lib/services/telegram';
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma'; // FIXED: Use singleton to prevent connection leaks
+import { prisma } from '@/lib/prisma';
 import { getTehranMarketStatus } from '@/lib/services/tehranMarketStatus';
 import { generateTelegramMessage } from '@/lib/services/generateTelegramMessage';
 import { revalidateTag } from 'next/cache';
+import jalaali from 'jalaali-js'; // 1. Import the date converter
 
+// ------------------------------------------------------------------
+// 🛠️ HELPER: Check for Weekends and Official Holidays
+// ------------------------------------------------------------------
+async function checkMarketHoliday(): Promise<{ isClosed: boolean; reason?: string }> {
+  const now = new Date();
+
+
+  try {
+    const jDate = jalaali.toJalaali(now);
+    // API Format: https://holidayapi.ir/jalali/{year}/{month}/{day}
+    const apiUrl = `https://holidayapi.ir/jalali/${jDate.jy}/${jDate.jm}/${jDate.jd}`;
+    
+    // Set a short timeout so we don't hang if the API is down
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 sec timeout
+
+    const response = await fetch(apiUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      // The API returns { is_holiday: true, events: [...] }
+      if (data.is_holiday) {
+        // Collect event names for the log
+        const eventNames = data.events?.map((e: any) => e.description).join(', ') || 'Official Holiday';
+        return { isClosed: true, reason: `Official Holiday: ${eventNames}` };
+      }
+    }
+  } catch (error) {
+    console.warn("⚠️ Failed to check holiday API, assuming market is open.", error);
+    // If API fails, we default to OPEN to be safe, or you can default to CLOSED if you prefer caution.
+  }
+
+  return { isClosed: false };
+}
+
+// ------------------------------------------------------------------
+// 🚀 MAIN ROUTE
+// ------------------------------------------------------------------
 export async function GET(request: Request) {
-  // OPTIONAL: Add a secret key check so only GitHub Actions can call this
   const authHeader = request.headers.get('authorization');
   console.log('⭕⭕ auth header', authHeader);
 
   try {
+    // 🛑 HOLIDAY & WEEKEND CHECK
+    // We run this BEFORE doing any heavy strategy logic
+    const marketCheck = await checkMarketHoliday();
+    
+    if (marketCheck.isClosed) {
+      console.log(`💤 Skipping Analysis: Market is closed due to: ${marketCheck.reason}`);
+      return NextResponse.json({
+        status: 'skipped',
+        message: `Market is closed (${marketCheck.reason}). No analysis run.`
+      });
+    }
+
     // 1. Run the Strategy Logic
     const result = await runTalebStrategy();
 
@@ -36,26 +87,14 @@ export async function GET(request: Request) {
       const savedSignal = await prisma.talebSignal.create({
         data: {
           marketStatus: currentStatus,
-
-          // Main Analysis
           aiReasoning: result.ai_analysis.market_sentiment,
-
-          // Specific AI Advice (Cast to InputJsonValue for Prisma)
-          callAdvice: (result.ai_analysis.call_suggestion ??
-            null) as unknown as Prisma.InputJsonValue,
-          putAdvice: (result.ai_analysis.put_suggestion ??
-            null) as unknown as Prisma.InputJsonValue,
-
-          // Candidates (includes calls/puts arrays with new numeric & pretty data)
+          callAdvice: (result.ai_analysis.call_suggestion ?? null) as unknown as Prisma.InputJsonValue,
+          putAdvice: (result.ai_analysis.put_suggestion ?? null) as unknown as Prisma.InputJsonValue,
           candidates: candidatesPayload as unknown as Prisma.InputJsonValue,
-
-          // 🟢 NEW: Save the Definitions Mapping
-          // This allows the frontend to look up "spread" and show "شکاف خرید و فروش"
           metadata: {
             definitions: result.definitions,
             engine_version: '2.1.0',
           } as unknown as Prisma.InputJsonValue,
-
           sentNotification: result.notify_me,
         },
       });
@@ -63,8 +102,7 @@ export async function GET(request: Request) {
       await NotificationService.broadcastEvent('TALEB_SIGNAL', {
         id: savedSignal.id,
         timestamp: new Date().toISOString(),
-        notify: result.notify_me, // Vital: Client uses this to trigger sound/popup
-        // Summary data for the toast
+        notify: result.notify_me,
         symbol:
           result.ai_analysis.call_suggestion?.decision === 'BUY'
             ? result.ai_analysis.call_suggestion?.symbol
@@ -83,38 +121,30 @@ export async function GET(request: Request) {
             : 0,
       });
 
-      // Construct Telegram Message (HTML Format)
       const msg = generateTelegramMessage(result);
 
-      // A. Get active subscribers from DB
+      // A. Get active subscribers
       const subscribers = await prisma.user.findMany({
         where: {
-          telegramId: { not: null }, // Must have Telegram ID linked
-          notifyTelegram: true, // Must have notifications ON
-          subscriptionExpiresAt: {
-            gt: new Date(), // Subscription must be in the future
-          },
+          telegramId: { not: null },
+          notifyTelegram: true,
+          subscriptionExpiresAt: { gt: new Date() },
         },
         select: { telegramId: true },
       });
 
-      // B. Create a unique list of recipients (Admin + Subscribers)
-      // We use a Set to ensure the Admin doesn't get double texts if they are also in the User table
+      // B. Create recipient list
       const recipientIds = new Set<string>();
-
-      // Always add Admin (from .env)
       if (process.env.ADMIN_TELEGRAM_CHAT_ID) {
         recipientIds.add(process.env.ADMIN_TELEGRAM_CHAT_ID);
       }
-
-      // Add Subscribers
       subscribers.forEach((user) => {
         if (user.telegramId) recipientIds.add(user.telegramId);
       });
 
       console.log(`📣 Sending signal to ${recipientIds.size} recipients...`);
 
-      // C. Send to everyone (using Promise.allSettled to prevent one failure stops all)
+      // C. Send messages
       const sendPromises = Array.from(recipientIds).map((chatId) =>
         NotificationService.sendTelegram(msg, chatId),
       );
@@ -135,7 +165,6 @@ export async function GET(request: Request) {
     console.error('🐞 Cron Job Error: ', error);
     console.error('🐞 Cron Job Error Request: ', error?.request);
 
-    // Fallback: Try to notify only Admin about the crash
     if (process.env.ADMIN_TELEGRAM_CHAT_ID) {
       await NotificationService.sendTelegram(
         `⚠️ <b>System Error:</b> ${error.message}`,

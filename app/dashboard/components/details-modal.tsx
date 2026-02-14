@@ -73,6 +73,8 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
   // 1. Manage State with URL
   const [signalId, setSignalId] = useQueryState('signalId');
 
+  console.log('🐞🐞🐞', initialData);
+
   // Internal state for fetching
   const [fetchedData, setFetchedData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -223,11 +225,12 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
 
         {/* Card Body */}
         <div className='p-3 md:p-5 space-y-4 md:space-y-6'>
-          
           {/* Price & Symbol Row */}
           <div className='flex justify-between items-end border-b border-gray-100 dark:border-gray-800 pb-3 md:pb-5'>
             <div>
-              <p className='text-xs md:text-sm text-gray-500 mb-1'>نماد منتخب</p>
+              <p className='text-xs md:text-sm text-gray-500 mb-1'>
+                نماد منتخب
+              </p>
               <p className='text-lg md:text-xl font-black text-gray-900 dark:text-white font-mono tracking-tighter'>
                 {advice.symbol || '---'}
               </p>
@@ -236,7 +239,9 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
               <p className='text-xs md:text-sm text-gray-500 mb-1'>قیمت ورود</p>
               <p className='text-lg md:text-2xl font-bold text-gray-900 dark:text-white'>
                 {formatPrice(advice.entry_price)}{' '}
-                <span className='text-xs md:text-sm font-normal text-gray-400'>ریال</span>
+                <span className='text-xs md:text-sm font-normal text-gray-400'>
+                  ریال
+                </span>
               </p>
             </div>
           </div>
@@ -254,7 +259,9 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
                   >
                     <div className='flex items-center gap-1.5 opacity-80'>
                       <Icon className='w-3.5 h-3.5 md:w-4 md:h-4' />
-                      <span className='text-[10px] md:text-xs font-bold'>{config.label}</span>
+                      <span className='text-[10px] md:text-xs font-bold'>
+                        {config.label}
+                      </span>
                     </div>
                     <span
                       className='text-xs md:text-sm font-black text-right truncate leading-tight'
@@ -321,7 +328,7 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
                     {/* Value: Bold mono, force LTR for numbers */}
                     <span
                       className={`text-xs md:text-sm font-bold font-mono tracking-tight ${item.class}`}
-                      dir='ltr' 
+                      dir='ltr'
                     >
                       {item.value}
                     </span>
@@ -345,10 +352,9 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
         onClick={onClose}
         className='w-full h-full absolute z-0 top-0 left-0'
       ></div>
-      
+
       {/* Container Card */}
       <div className='bg-white z-10 dark:bg-gray-950 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 relative'>
-        
         {/* --- Header --- */}
         <div className='flex items-center justify-between p-4 md:p-5 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-0 z-10'>
           <div className='flex flex-col gap-1'>
@@ -392,7 +398,7 @@ export function DetailsModal({ initialData }: DetailsModalProps) {
           {!loading && error && (
             <div className='flex flex-col items-center justify-center h-64 gap-4 text-red-500'>
               <AlertTriangle className='w-8 h-8 md:w-10 md:h-10' />
-              <p className="text-sm md:text-base">{error}</p>
+              <p className='text-sm md:text-base'>{error}</p>
               <button
                 onClick={onClose}
                 className='text-blue-600 underline text-xs md:text-sm'

@@ -245,7 +245,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
           list
             .map(
               (c) =>
-                `Sym:${c.symbol} | Trend:${c.data.underlyingChange}% | Spread:${c.data.spread}% | IV:${(c.data.iv * 100).toFixed(0)}%`,
+                `Sym:${c.symbol} | Price: ${c.data.price} | Trend:${c.data.underlyingChange}% | Spread:${c.data.spread}% | IV:${(c.data.iv * 100).toFixed(0)}%`,
             )
             .join('\n');
 
@@ -253,6 +253,7 @@ export async function runTalebStrategy(): Promise<TalebResult> {
          Act as an Expert Options Trader (Nassim Taleb Strategy) for the Tehran Stock Exchange.
         
         **Data Key:**
+        - Price: Current market price of the option (in Rials).
         - StockTrend: Daily change of underlying asset.
         - Spr (Spread): Bid-Ask spread %. >10% is risky.
         - IV: Implied Volatility. >80% is expensive.
