@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     // Add an image to your public folder named 'og-image.jpg' (1200x630px is best)
     images: [
       {
-        url: '/og-image.png',
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/og-image.png`,
         width: 1200,
         height: 630,
         alt: 'OptionYar Dashboard Preview',
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
     title: 'آپشن‌یار | ریسک محدود، پاداش نامحدود',
     description:
       'داشبورد حرفه‌ای برای معامله‌گران اختیار معامله. جایی که نوسان دوست شماست.',
-    images: ['/og-image.png'], // Reuses the OG image
+    images: [`${process.env.NEXT_PUBLIC_APP_URL}/og-image.png`,], // Reuses the OG image
   },
 
   // 7. Robots: Ensures Google indexes the page
