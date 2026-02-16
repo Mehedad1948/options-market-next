@@ -12,6 +12,8 @@ import { unstable_cache } from 'next/cache';
 async function fetchUserFromDb(userId: string) {
   // RED LOG: Indicates a slow/expensive DB operation
 
+  console.log('🚀🚀 fetchUserFromDb');
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: userDashboardSelect,
@@ -52,6 +54,7 @@ export const getUser = cache(async () => {
   if (!session?.userId) {
     return null;
   }
+  console.log('🍎🍎 get User Memoized');
 
   // CYAN LOG: This runs every time you call getUser() in your components.
   // If you see 3 of these logs but only 1 YELLOW/RED log, Memoization is working.

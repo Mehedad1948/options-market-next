@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { BotButton } from "./bot-link";
 import { UserMenu } from "./user-menu";
-import { BarChart3, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { DashboardLink } from './dashboard-link';
+import { ExtensionLink } from './extension-link';
 import { Suspense } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import Logo from './Logo';
@@ -25,15 +26,17 @@ export default function Header() {
         </div>
 
         {/* LEFT SIDE: Actions */}
-        <div className="flex items-center gap-3 md:gap-6">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <Suspense fallback={<div className='bg-amber-50 animate-pulse w-24 h-9 rounded-xl'></div>}>
             <DashboardLink />
           </Suspense>
 
+          <ExtensionLink />
+
           <BotButton />
 
           {/* Vertical Divider */}
-          <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
+          <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
 
           <Suspense fallback={<Loader2 className='animate-spin text-amber-400' />}>
             <UserMenu />
