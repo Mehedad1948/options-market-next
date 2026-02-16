@@ -175,7 +175,7 @@ export const ExtensionPromo = () => {
                >
                   <div className="text-center animate-pulse-slow">
                     <span className="block text-xs text-slate-400 font-medium">Status</span>
-                    <span className="block text-sm font-bold text-emerald-500">Active</span>
+                    <span className="block text-sm font-bold animate-pulse text-emerald-500">Active</span>
                   </div>
                </motion.div>
             </div>
