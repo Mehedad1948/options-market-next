@@ -1,17 +1,17 @@
-'use client'; // Required for Framer Motion
+'use client'; 
 
 import React from 'react';
 import Image from 'next/image';
 import { Chrome, Zap, Shield, MousePointer2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion'; // 1. Import Variants type
 
 export const ExtensionPromo = () => {
   const extensionUrl = "https://chromewebstore.google.com/detail/optionyar-%D8%A2%D9%BE%D8%B4%D9%86%E2%80%8C%DB%8C%D8%A7%D8%B1/mnpfikomilcgieconkiiodfcpkjaclcb";
 
   // --- Animation Variants ---
   
-  // Animation for the text block (slides in from right)
-  const textVariants = {
+  // 2. Add ': Variants' type to all variant objects
+  const textVariants: Variants = {
     hidden: { opacity: 0, x: 50 },
     visible: { 
       opacity: 1, 
@@ -20,8 +20,7 @@ export const ExtensionPromo = () => {
     }
   };
 
-  // Animation for the image block (scales up and fades in)
-  const imageVariants = {
+  const imageVariants: Variants = {
     hidden: { opacity: 0, scale: 0.9, x: -50 },
     visible: { 
       opacity: 1, 
@@ -31,20 +30,18 @@ export const ExtensionPromo = () => {
     }
   };
 
-  // Container for features to control the staggering (scatter effect)
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15, // Delay between each item appearing
-        delayChildren: 0.3 // Wait a bit before starting
+        staggerChildren: 0.15,
+        delayChildren: 0.3
       }
     }
   };
 
-  // Animation for individual feature items (pop up)
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20, scale: 0.8 },
     visible: { 
       opacity: 1, 
@@ -70,7 +67,7 @@ export const ExtensionPromo = () => {
             className="w-full lg:w-3/5 text-right order-1"
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }} // Triggers when 30% visible
+            viewport={{ once: true, amount: 0.3 }}
             variants={textVariants}
           >
             
