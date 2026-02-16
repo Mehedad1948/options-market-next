@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { WhatWeDoSection } from './components/Introduction';
+import ExtensionPromo from './components/ExtensionPromo';
 
 export default async function HomePage() {
 
@@ -222,6 +223,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <ExtensionPromo />
 
       <WhatWeDoSection />
 
